@@ -365,48 +365,6 @@ python cloudscan/cmd/cloudscan.py > /tmp/findings.json
 ./scripts/validate_findings.sh /tmp/findings.json
 ```
 
-## Roadmap
-
-### Phase 1: Core Architecture (Next)
-- CLI with Click framework
-- Configuration management
-- AWS authentication
-- Logging setup
-
-### Phase 2: Asset Collection
-- IAM collector
-- S3 collector
-- EC2 collector
-- RDS collector
-
-### Phase 3: Rule Engine
-- Rule base class
-- First rule set (CIS + high-value)
-- Finding data class
-- Rule evaluation loop
-
-### Phase 4: Output Formatting
-- Console formatter (colors, tables)
-- JSON formatter
-- SARIF formatter (GitHub integration)
-
-### Phase 5: Real-World Validation
-- Create vulnerable AWS lab
-- Run scanner
-- Validate findings
-- Capture screenshots
-
-### Phase 6: Advanced Features
-- Auto-fix (opt-in only)
-- CI/CD mode (--fail-on flag)
-- Risk grouping
-- GitHub Action
-
-### Phase 7: Documentation
-- Blog post
-- Interview talking points
-- Performance benchmarks
-- False positive analysis
 
 ## Security Considerations
 
