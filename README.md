@@ -104,13 +104,6 @@ Output Formatter
    - Thoughtful scope (know what NOT to build)
    - Production patterns
 
-### ❌ What We're NOT Building
-
-- ❌ Dashboard (scope creep)
-- ❌ AI/ML "risk scoring" (no methodology)
-- ❌ Auto-fix without review (dangerous)
-- ❌ Multi-cloud (AWS only = deeper integration)
-- ❌ Real-time event processing (API polling only)
 
 ## Example Output
 
@@ -394,31 +387,6 @@ python cloudscan/cmd/cloudscan.py > /tmp/findings.json
 }
 ```
 
-## Interview Questions
-
-1. **"How would you scale this to 1000 AWS accounts?"**
-   - Parallel collection with ThreadPoolExecutor
-   - Centralized finding database
-   - Aggregation layer
-
-2. **"What about false positives?"**
-   - Context awareness (e.g., intentional public buckets)
-   - Allowlist mechanism
-   - Custom rules per environment
-
-3. **"How do you handle breaking AWS API changes?"**
-   - Version pinning in requirements.txt
-   - Deprecation testing in CI
-   - API version compatibility checks
-
-4. **"Could you add auto-fix?"**
-   - Yes, but requires: human review UI, change auditing, rollback capability
-   - Better as separate tool consuming scanner output
-
-5. **"Why not use existing tools?"**
-   - This is a learning project
-   - Existing tools are black boxes (can't discuss in interview)
-   - This shows you can build production-grade code
 
 ## License
 
