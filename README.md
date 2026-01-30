@@ -1,8 +1,7 @@
-# Cloud Misconfiguration Scanner for AWS 🛡️
+# Cloud Misconfiguration Scanner for AWS 
 
 A production-style security scanner that detects real AWS misconfigurations with clear risk, evidence, and remediation guidance.
 
-**Perfect for interviews** — demonstrates security thinking, clean architecture, and production-ready code.
 
 ## Quick Start
 
@@ -98,11 +97,6 @@ Output Formatter
    - Uses boto3 credential chain
    - Output sanitization for logs
 
-4. **Interview Defensible**
-   - Clear architectural decisions
-   - Mirrors enterprise tools (CloudTrail, Security Hub)
-   - Thoughtful scope (know what NOT to build)
-   - Production patterns
 
 
 ## Example Output
