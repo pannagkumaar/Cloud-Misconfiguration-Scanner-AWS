@@ -23,6 +23,8 @@ from cloudscan.engine.rule_engine import RuleEngine
 from cloudscan.engine.finding import Severity
 from cloudscan.output.console import ConsoleOutputFormatter
 from cloudscan.output.json import JSONOutputFormatter, JSONLOutputFormatter
+from cloudscan.website.scanner import WebsiteScanner
+from cloudscan.website.output import WebsiteOutputFormatter
 
 logger = get_logger("cli")
 
@@ -37,7 +39,7 @@ def cli():
     pass
 
 
-@cli.command()
+@cli.command(name="aws-scan")
 @click.option(
     "--config",
     type=click.Path(exists=True),
@@ -96,7 +98,7 @@ def cli():
     default=None,
     help="Exit with code 1 if findings at this severity or higher are found"
 )
-def scan(
+def aws_scan(
     config,
     from_file,
     profile,
@@ -236,6 +238,65 @@ def scan(
 
 
 @cli.command()
+@click.argument("url")
+@click.option(
+    "--output-file",
+    type=click.Path(),
+    default=None,
+    help="Write findings to file instead of stdout"
+)
+@click.option(
+    "--log-level",
+    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR"]),
+    default="INFO",
+    help="Logging level (default: INFO)"
+)
+def website_scan(url, output_file, log_level):
+    """Scan website for AWS misconfigurations (Stage 1 of pentesting).
+
+    Performs passive reconnaissance to identify AWS infrastructure and
+    security misconfigurations exposed on the website.
+
+    Example:
+
+        \b
+        # Scan a website
+        cloudscan website-scan https://example.com
+
+        \b
+        # Save findings to file
+        cloudscan website-scan https://example.com --output-file findings.txt
+
+        \b
+        # If AWS detected, proceed to deep scan
+        cloudscan aws-scan --from-file aws-config.json
+    """
+    setup_logging(log_level=log_level)
+    logger.info(f"Starting website scan for: {url}")
+
+    try:
+        # Stage 1: Website reconnaissance
+        scanner = WebsiteScanner(url)
+        indicators = scanner.scan()
+        aws_services = scanner.get_aws_services()
+
+        # Format output
+        formatter = WebsiteOutputFormatter(output_file=output_file)
+        formatted_output = formatter.format(url, indicators, aws_services)
+        formatter.write(formatted_output)
+
+        # If AWS detected, suggest next steps
+        if aws_services:
+            logger.info(f"AWS infrastructure detected: {', '.join(aws_services)}")
+            logger.info("Next: Export AWS config and run 'cloudscan aws-scan --from-file config.json'")
+
+    except Exception as e:
+        logger.error(f"Website scan failed: {e}", exc_info=True)
+        click.secho(f"Error: {e}", fg="red")
+        sys.exit(1)
+
+
+@cli.command()
 def validate():
     """Validate AWS credentials and configuration.
 
@@ -249,25 +310,52 @@ def validate():
 
         if aws_client.validate_credentials():
             account_id = aws_client.get_account_id()
-            click.secho("✓ AWS credentials are valid", fg="green")
+            click.secho("OK - AWS credentials are valid", fg="green")
             click.echo(f"  Account ID: {account_id}")
             click.echo(f"  Region: {aws_client.region}")
         else:
-            click.secho("✗ AWS credentials validation failed", fg="red")
+            click.secho("FAIL - AWS credentials validation failed", fg="red")
             sys.exit(1)
 
     except Exception as e:
-        click.secho(f"✗ Validation failed: {e}", fg="red")
+        click.secho(f"FAIL - Validation error: {e}", fg="red")
         logger.error(f"Validation error: {e}", exc_info=True)
         sys.exit(1)
+
+
+# Alias for backward compatibility
+@cli.command(name="scan")
+@click.option("--config", type=click.Path(exists=True), default=None)
+@click.option("--from-file", type=click.Path(exists=True), default=None)
+@click.option("--profile", default="default")
+@click.option("--region", default="us-east-1")
+@click.option("--services", multiple=True, type=click.Choice(["iam", "s3", "ec2", "rds"]))
+@click.option("--severity", multiple=True, type=click.Choice(["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]))
+@click.option("--output", type=click.Choice(["console", "json", "sarif"]), default="console")
+@click.option("--output-file", type=click.Path(), default=None)
+@click.option("--log-level", type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR"]), default="INFO")
+@click.option("--fail-on", type=click.Choice(["CRITICAL", "HIGH", "MEDIUM", "LOW"]), default=None)
+def scan(config, from_file, profile, region, services, severity, output, output_file, log_level, fail_on):
+    """Scan for misconfigurations (alias for aws-scan for backward compatibility)."""
+    # Delegate to aws_scan
+    return aws_scan.callback(config, from_file, profile, region, services, severity, output, output_file, log_level, fail_on)
 
 
 @cli.command()
 def version():
     """Show version information."""
     click.echo("Cloud Misconfiguration Scanner v0.1.0")
-    click.echo("Phase 1: Core Architecture (Complete)")
-    click.echo("Next: Phase 2 - Service Collectors")
+    click.echo("")
+    click.echo("Available Commands:")
+    click.echo("  website-scan  - Stage 1: Scan website for AWS misconfigurations")
+    click.echo("  aws-scan      - Stage 2: Deep analysis of AWS configurations")
+    click.echo("  validate      - Test AWS credentials")
+    click.echo("  version       - Show this help")
+    click.echo("")
+    click.echo("Typical Pentesting Flow:")
+    click.echo("  1. cloudscan website-scan https://example.com")
+    click.echo("  2. If AWS detected, export config")
+    click.echo("  3. cloudscan aws-scan --from-file aws-config.json")
 
 
 if __name__ == "__main__":

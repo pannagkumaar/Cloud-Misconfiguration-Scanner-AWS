@@ -25,11 +25,25 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### First Scan (Two Options)
+### Two-Stage Pentesting Workflow
+
+**Stage 1: Website Reconnaissance (no credentials needed)**
+```bash
+python cloudscan/cmd/cloudscan.py website-scan https://example.com
+```
+Identifies AWS infrastructure, misconfigurations, security issues
+
+**Stage 2: Deep AWS Analysis (if you have AWS export)**
+```bash
+python cloudscan/cmd/cloudscan.py aws-scan --from-file aws-config.json
+```
+Detailed security analysis of AWS configurations
+
+### First Scan (AWS Account)
 
 **Option 1: Live Scanning (requires AWS credentials)**
 ```bash
-python cloudscan/cmd/cloudscan.py scan --profile default --severity HIGH CRITICAL
+python cloudscan/cmd/cloudscan.py aws-scan --profile default --severity HIGH CRITICAL
 ```
 
 **Option 2: Offline Scanning (NO credentials needed - Perfect for pentesting!)**
@@ -38,7 +52,7 @@ python cloudscan/cmd/cloudscan.py scan --profile default --severity HIGH CRITICA
 aws s3 iam ec2 rds > aws-config.json
 
 # Then scan it anytime, anywhere
-python cloudscan/cmd/cloudscan.py scan --from-file aws-config.json
+python cloudscan/cmd/cloudscan.py aws-scan --from-file aws-config.json
 ```
 
 ## Project Status
@@ -46,11 +60,11 @@ python cloudscan/cmd/cloudscan.py scan --from-file aws-config.json
 | Phase | Description | Status |
 |-------|-------------|--------|
 | **0** | Project definition & scope | ✅ Complete |
-| **1** | Core architecture & CLI setup | ⏳ In Progress |
-| **2** | Service collectors (IAM, S3, EC2, RDS) | 🔲 Not Started |
-| **3** | Rule engine & security rules | 🔲 Not Started |
-| **4** | Output formatting (JSON, Console, SARIF) | 🔲 Not Started |
-| **5** | Validation with real misconfigs | 🔲 Not Started |
+| **1** | Core architecture & CLI setup | ✅ Complete |
+| **2** | Service collectors (IAM, S3, EC2, RDS) | ✅ Complete |
+| **3** | Rule engine & security rules | ✅ Complete |
+| **4** | Output formatting (JSON, Console, SARIF) | ✅ Complete |
+| **5** | Offline scanning & pentesting mode | ✅ Complete |
 | **6** | Advanced features (auto-fix, CI/CD) | 🔲 Not Started |
 | **7** | Documentation & presentation | 🔲 Not Started |
 
@@ -225,49 +239,74 @@ output:
 
 ## Usage
 
-### Live Scanning (AWS Credentials Required)
+### Website Scanner (Stage 1: Reconnaissance)
+
+```bash
+# Scan a website for AWS misconfigurations
+python cloudscan/cmd/cloudscan.py website-scan https://example.com
+
+# Save findings to file
+python cloudscan/cmd/cloudscan.py website-scan https://example.com --output-file findings.txt
+```
+
+**What it checks:**
+- Security headers (HSTS, CSP, X-Frame-Options, etc.)
+- SSL/TLS certificate validity
+- AWS infrastructure detection (S3, CloudFront, RDS, etc.)
+- Error page information disclosure
+- DNS records
+
+**Output:**
+- Severity levels: CRITICAL, HIGH, MEDIUM, LOW, INFO
+- Remediation guidance
+- AWS services detected (if any)
+- Next steps for deep analysis
+
+### AWS Scanner (Stage 2: Deep Analysis)
+
+#### Live Scanning (AWS Credentials Required)
 
 ```bash
 # Scan with default credentials
-python cloudscan/cmd/cloudscan.py scan
+python cloudscan/cmd/cloudscan.py aws-scan
 
 # Specify AWS profile
-python cloudscan/cmd/cloudscan.py scan --profile prod
+python cloudscan/cmd/cloudscan.py aws-scan --profile prod
 
 # Filter by severity
-python cloudscan/cmd/cloudscan.py scan --severity HIGH CRITICAL
+python cloudscan/cmd/cloudscan.py aws-scan --severity HIGH CRITICAL
 
 # Scan specific services
-python cloudscan/cmd/cloudscan.py scan --services iam s3
+python cloudscan/cmd/cloudscan.py aws-scan --services iam s3
 
 # Output to JSON
-python cloudscan/cmd/cloudscan.py scan --output json > findings.json
+python cloudscan/cmd/cloudscan.py aws-scan --output json > findings.json
 ```
 
-### Offline Scanning (No Credentials Needed - Great for Pentesting!)
+#### Offline Scanning (No Credentials Needed - Great for Pentesting!)
 
 ```bash
 # Export AWS config from account with access
 ./scripts/export_aws_config.sh > aws-export.json
 
 # Scan it offline on any machine - no credentials needed!
-python cloudscan/cmd/cloudscan.py scan --from-file aws-export.json
+python cloudscan/cmd/cloudscan.py aws-scan --from-file aws-export.json
 
 # Share with security team or run in CI/CD without AWS creds
-python cloudscan/cmd/cloudscan.py scan --from-file aws-export.json --output json
+python cloudscan/cmd/cloudscan.py aws-scan --from-file aws-export.json --output json
 ```
 
 ### Advanced Options
 
 ```bash
 # Fail if any CRITICAL findings (for CI/CD)
-python cloudscan/cmd/cloudscan.py scan --fail-on CRITICAL
+python cloudscan/cmd/cloudscan.py aws-scan --fail-on CRITICAL
 
 # Set log level for debugging
-python cloudscan/cmd/cloudscan.py scan --log-level DEBUG
+python cloudscan/cmd/cloudscan.py aws-scan --log-level DEBUG
 
 # Combine options
-python cloudscan/cmd/cloudscan.py scan --from-file config.json --severity HIGH CRITICAL --output json --output-file findings.json
+python cloudscan/cmd/cloudscan.py aws-scan --from-file config.json --severity HIGH CRITICAL --output json --output-file findings.json
 ```
 
 ## Architecture Decisions
