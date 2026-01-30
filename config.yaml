@@ -1,0 +1,38 @@
+# Cloud Misconfiguration Scanner Configuration
+
+# AWS Configuration
+aws:
+  region: us-east-1
+  profile: default
+  assume_role: null  # Optional: ARN of read-only role to assume
+
+# Scanner Configuration
+scanner:
+  # Services to scan
+  services:
+    - iam
+    - s3
+    - ec2
+    - rds
+  
+  # Severity levels to include in output
+  severity_levels:
+    - CRITICAL
+    - HIGH
+    - MEDIUM
+    - LOW
+    - INFO
+  
+  # CIS Benchmark version
+  cis_version: 1.5.0
+
+# Output Configuration
+output:
+  format: console  # console, json, sarif
+  file: null  # Optional output file path
+  json_indent: 2
+
+# Remediation
+remediation:
+  auto_fix: false  # DO NOT enable in production until validated
+  dry_run: true
