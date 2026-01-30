@@ -1,1 +1,1 @@
-# Cloud-Misconfiguration-Scanner-AWS-
+# Cloud-Misconfiguration-Scanner-AWS
