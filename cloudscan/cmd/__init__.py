@@ -1,0 +1,1 @@
+"""Initialize cmd package."""
