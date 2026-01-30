@@ -1,0 +1,176 @@
+{
+  "services": ["iam", "s3", "ec2", "rds"],
+  "data": {
+    "iam": {
+      "users": {
+        "Users": [
+          {
+            "UserName": "admin-user",
+            "UserId": "AIDACKCEVSQ6C2EXAMPLE",
+            "Arn": "arn:aws:iam::123456789012:user/admin-user",
+            "CreateDate": "2024-01-15T10:30:00Z"
+          },
+          {
+            "UserName": "developer",
+            "UserId": "AIDACKCEVSQ6C3EXAMPLE",
+            "Arn": "arn:aws:iam::123456789012:user/developer",
+            "CreateDate": "2024-01-20T14:45:00Z"
+          }
+        ]
+      },
+      "roles": {
+        "Roles": [
+          {
+            "RoleName": "LambdaExecutionRole",
+            "AssumeRolePolicyDocument": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}",
+            "Arn": "arn:aws:iam::123456789012:role/LambdaExecutionRole"
+          }
+        ]
+      },
+      "policies": {
+        "Policies": [
+          {
+            "PolicyName": "admin-access",
+            "PolicyId": "ANPAI23HZ27SI6FQMGNQ2",
+            "Arn": "arn:aws:iam::123456789012:policy/admin-access",
+            "DefaultVersionId": "v1",
+            "AttachmentCount": 1,
+            "PermissionsBoundaryUsageCount": 0,
+            "IsAttachable": true,
+            "Description": "Admin policy with full access",
+            "CreateDate": "2024-01-10T09:00:00Z",
+            "UpdateDate": "2024-01-10T09:00:00Z"
+          }
+        ]
+      }
+    },
+    "s3": {
+      "buckets": {
+        "Buckets": [
+          {
+            "Name": "public-logs-bucket",
+            "CreationDate": "2024-01-01T08:00:00Z"
+          },
+          {
+            "Name": "private-data-bucket",
+            "CreationDate": "2024-01-05T10:30:00Z"
+          }
+        ]
+      }
+    },
+    "ec2": {
+      "security_groups": {
+        "SecurityGroups": [
+          {
+            "GroupId": "sg-0123456789abcdef0",
+            "GroupName": "web-tier-sg",
+            "Description": "Security group for web tier",
+            "IpPermissions": [
+              {
+                "IpProtocol": "tcp",
+                "FromPort": 22,
+                "ToPort": 22,
+                "IpRanges": [
+                  {
+                    "CidrIp": "0.0.0.0/0",
+                    "Description": "SSH from anywhere"
+                  }
+                ]
+              },
+              {
+                "IpProtocol": "tcp",
+                "FromPort": 80,
+                "ToPort": 80,
+                "IpRanges": [
+                  {
+                    "CidrIp": "0.0.0.0/0"
+                  }
+                ]
+              },
+              {
+                "IpProtocol": "tcp",
+                "FromPort": 443,
+                "ToPort": 443,
+                "IpRanges": [
+                  {
+                    "CidrIp": "0.0.0.0/0"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "GroupId": "sg-0987654321fedcba0",
+            "GroupName": "db-tier-sg",
+            "Description": "Security group for database tier",
+            "IpPermissions": [
+              {
+                "IpProtocol": "tcp",
+                "FromPort": 3306,
+                "ToPort": 3306,
+                "IpRanges": [
+                  {
+                    "CidrIp": "10.0.0.0/8"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "instances": {
+        "Reservations": [
+          {
+            "Instances": [
+              {
+                "InstanceId": "i-0abcdef1234567890",
+                "InstanceType": "t3.medium",
+                "PublicIpAddress": "54.123.45.67",
+                "SecurityGroups": [
+                  {
+                    "GroupId": "sg-0123456789abcdef0",
+                    "GroupName": "web-tier-sg"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "rds": {
+      "db_instances": {
+        "DBInstances": [
+          {
+            "DBInstanceIdentifier": "prod-mysql-db",
+            "DBInstanceClass": "db.t3.micro",
+            "Engine": "mysql",
+            "DBInstanceStatus": "available",
+            "PubliclyAccessible": true,
+            "StorageEncrypted": false,
+            "BackupRetentionPeriod": 5,
+            "DeletionProtection": false,
+            "Endpoint": {
+              "Address": "prod-mysql-db.c9akciq32.us-east-1.rds.amazonaws.com",
+              "Port": 3306
+            }
+          },
+          {
+            "DBInstanceIdentifier": "dev-postgres-db",
+            "DBInstanceClass": "db.t3.micro",
+            "Engine": "postgres",
+            "DBInstanceStatus": "available",
+            "PubliclyAccessible": false,
+            "StorageEncrypted": true,
+            "BackupRetentionPeriod": 7,
+            "DeletionProtection": true,
+            "Endpoint": {
+              "Address": "dev-postgres-db.c9akciq32.us-east-1.rds.amazonaws.com",
+              "Port": 5432
+            }
+          }
+        ]
+      }
+    }
+  }
+}

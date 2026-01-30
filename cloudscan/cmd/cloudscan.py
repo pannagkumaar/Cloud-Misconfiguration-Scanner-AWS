@@ -10,13 +10,14 @@ import sys
 import json
 from pathlib import Path
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add grandparent directory to path for imports (so cloudscan can be imported)
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from cloudscan.config import ScannerConfig
 from cloudscan.logger import setup_logging, get_logger
 from cloudscan.aws_client import AWSClient
-from cloudscan.collectors.manager import CollectorManager
+from cloudscan.loaders.aws_live import AWSLiveLoader
+from cloudscan.loaders.file_loader import FileLoader
 from cloudscan.engine.context import ScanContext
 from cloudscan.engine.rule_engine import RuleEngine
 from cloudscan.engine.finding import Severity
@@ -44,14 +45,20 @@ def cli():
     help="Path to config.yaml"
 )
 @click.option(
+    "--from-file",
+    type=click.Path(exists=True),
+    default=None,
+    help="Load configuration from JSON/YAML file (offline mode, no AWS credentials needed)"
+)
+@click.option(
     "--profile",
     default="default",
-    help="AWS profile to use (default: default)"
+    help="AWS profile to use (default: default, only used without --from-file)"
 )
 @click.option(
     "--region",
     default="us-east-1",
-    help="AWS region to scan (default: us-east-1)"
+    help="AWS region to scan (default: us-east-1, only used without --from-file)"
 )
 @click.option(
     "--services",
@@ -91,6 +98,7 @@ def cli():
 )
 def scan(
     config,
+    from_file,
     profile,
     region,
     services,
@@ -100,13 +108,26 @@ def scan(
     log_level,
     fail_on
 ):
-    """Scan AWS account for security misconfigurations.
+    """Scan for security misconfigurations.
+
+    Supports two modes:
+    1. LIVE MODE (requires AWS credentials):
+       cloudscan scan --profile myprofile --region us-east-1
+
+    2. OFFLINE MODE (no credentials needed):
+       cloudscan scan --from-file exported-config.json
+
+    Perfect for pentesting - analyze exported configs offline!
 
     Example:
 
         \b
-        # Basic scan
+        # Live scan from AWS
         cloudscan scan
+
+        \b
+        # Scan exported configuration (no AWS access needed!)
+        cloudscan scan --from-file /path/to/aws-config.json
 
         \b
         # Scan specific services
@@ -129,31 +150,42 @@ def scan(
     logger.info("Starting scan...")
 
     try:
-        # Load configuration
-        config_obj = ScannerConfig(config)
-        logger.debug(f"Configuration loaded from {config_obj.config_path}")
+        # Determine data source
+        if from_file:
+            logger.info(f"Loading configuration from file: {from_file}")
+            loader = FileLoader(from_file)
+            account_id = "unknown"
+            region = "unknown"
+        else:
+            # Live AWS mode
+            logger.info("Loading configuration from AWS APIs")
+            
+            # Load configuration
+            config_obj = ScannerConfig(config)
+            logger.debug(f"Configuration loaded from {config_obj.config_path}")
 
-        # AWS authentication
-        logger.info("Authenticating to AWS...")
-        aws_client = AWSClient(
-            region=region,
-            profile=profile,
-            assume_role=config_obj.get("aws.assume_role")
-        )
+            # AWS authentication
+            logger.info("Authenticating to AWS...")
+            aws_client = AWSClient(
+                region=region,
+                profile=profile,
+                assume_role=config_obj.get("aws.assume_role")
+            )
 
-        # Validate credentials
-        if not aws_client.validate_credentials():
-            logger.error("AWS credentials validation failed")
-            sys.exit(1)
+            # Validate credentials
+            if not aws_client.validate_credentials():
+                logger.error("AWS credentials validation failed")
+                sys.exit(1)
 
-        account_id = aws_client.get_account_id()
-        logger.info(f"Connected to AWS account: {account_id}")
+            account_id = aws_client.get_account_id()
+            logger.info(f"Connected to AWS account: {account_id}")
 
-        # PHASE 2: Collect AWS configuration
-        logger.info("Collecting AWS configuration...")
-        collector_manager = CollectorManager(aws_client)
-        services_to_collect = list(services) if services else ["iam", "s3", "ec2", "rds"]
-        collected_data = collector_manager.collect_all(services_to_collect)
+            # Create loader for live AWS
+            services_to_collect = list(services) if services else ["iam", "s3", "ec2", "rds"]
+            loader = AWSLiveLoader(aws_client, services=services_to_collect)
+
+        # Load configuration data
+        collected_data = loader.load()
 
         # PHASE 3: Run security rules
         logger.info("Running security rules...")
