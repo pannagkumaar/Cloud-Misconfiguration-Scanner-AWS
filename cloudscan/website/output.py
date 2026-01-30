@@ -3,6 +3,7 @@ Website Scanner Output Formatter - Formats website scan results.
 """
 
 import logging
+import json
 from typing import List, Dict, Any
 from datetime import datetime
 
@@ -27,9 +28,21 @@ class WebsiteOutputFormatter:
         'INFO': Fore.CYAN if HAS_COLORAMA else '',
     }
 
-    def __init__(self, output_file: str = None):
+    INDICATOR_TYPE_NAMES = {
+        'header': 'Security Header',
+        'dns': 'DNS Record',
+        'certificate': 'SSL Certificate',
+        'error_message': 'Error Disclosure',
+        'subdomain': 'Subdomain',
+        'credential': 'Exposed Credential',
+        's3_bucket': 'S3 Bucket',
+        'aws_service': 'AWS Service',
+    }
+
+    def __init__(self, output_file: str = None, output_format: str = 'console'):
         """Initialize formatter."""
         self.output_file = output_file
+        self.output_format = output_format
 
     def format(self, url: str, indicators: List[Any], aws_services: List[str]) -> str:
         """
@@ -43,6 +56,13 @@ class WebsiteOutputFormatter:
         Returns:
             Formatted output string
         """
+        if self.output_format == 'json':
+            return self._format_json(url, indicators, aws_services)
+        else:
+            return self._format_console(url, indicators, aws_services)
+
+    def _format_console(self, url: str, indicators: List[Any], aws_services: List[str]) -> str:
+        """Format for console output."""
         output = []
 
         # Header
@@ -84,6 +104,7 @@ class WebsiteOutputFormatter:
                 if severity in by_severity:
                     color = self.SEVERITY_COLORS.get(severity, '')
                     reset = Style.RESET_ALL if HAS_COLORAMA else ''
+                    type_name = self.INDICATOR_TYPE_NAMES.get(by_severity[severity][0].indicator_type, by_severity[severity][0].indicator_type)
 
                     output.append(f"{color}[{severity}]{reset} {severity} Severity Indicators ({len(by_severity[severity])})")
                     output.append("-" * 80)
@@ -92,7 +113,7 @@ class WebsiteOutputFormatter:
                         output.append(f"  {indicator.title}")
                         if indicator.aws_service:
                             output.append(f"    AWS Service: {indicator.aws_service}")
-                        output.append(f"    Type: {indicator.indicator_type}")
+                        output.append(f"    Type: {self.INDICATOR_TYPE_NAMES.get(indicator.indicator_type, indicator.indicator_type)}")
                         output.append(f"    Description: {indicator.description}")
                         output.append(f"    Evidence: {indicator.evidence}")
                         output.append(f"    Remediation: {indicator.remediation}")
@@ -112,6 +133,18 @@ class WebsiteOutputFormatter:
         output.append(f"  Total: {len(indicators)}")
         output.append("")
 
+        # Statistics
+        indicator_types = {}
+        for indicator in indicators:
+            itype = self.INDICATOR_TYPE_NAMES.get(indicator.indicator_type, indicator.indicator_type)
+            indicator_types[itype] = indicator_types.get(itype, 0) + 1
+        
+        if indicator_types:
+            output.append("Indicator Types:")
+            for itype, count in sorted(indicator_types.items()):
+                output.append(f"  {itype}: {count}")
+            output.append("")
+
         if aws_services:
             output.append("Next Steps:")
             output.append("  1. If you have AWS credentials, export the configuration:")
@@ -123,6 +156,40 @@ class WebsiteOutputFormatter:
 
         return "\n".join(output)
 
+    def _format_json(self, url: str, indicators: List[Any], aws_services: List[str]) -> str:
+        """Format for JSON output."""
+        data = {
+            'scan': {
+                'url': url,
+                'timestamp': datetime.utcnow().isoformat() + 'Z',
+                'scanner': 'CloudScan-Website-Scanner',
+                'version': '0.1.0'
+            },
+            'aws_services': aws_services,
+            'indicators': [],
+            'summary': {
+                'total': len(indicators),
+                'critical': len([i for i in indicators if i.severity == 'CRITICAL']),
+                'high': len([i for i in indicators if i.severity == 'HIGH']),
+                'medium': len([i for i in indicators if i.severity == 'MEDIUM']),
+                'low': len([i for i in indicators if i.severity == 'LOW']),
+                'info': len([i for i in indicators if i.severity == 'INFO']),
+            }
+        }
+
+        for indicator in indicators:
+            data['indicators'].append({
+                'type': indicator.indicator_type,
+                'severity': indicator.severity,
+                'title': indicator.title,
+                'description': indicator.description,
+                'evidence': indicator.evidence,
+                'remediation': indicator.remediation,
+                'aws_service': indicator.aws_service,
+            })
+
+        return json.dumps(data, indent=2)
+
     def write(self, content: str):
         """Write output to file or stdout."""
         if self.output_file:
@@ -131,3 +198,4 @@ class WebsiteOutputFormatter:
             logger.info(f"Output written to {self.output_file}")
         else:
             print(content)
+

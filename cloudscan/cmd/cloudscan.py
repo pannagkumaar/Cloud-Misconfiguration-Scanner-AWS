@@ -240,6 +240,12 @@ def aws_scan(
 @cli.command()
 @click.argument("url")
 @click.option(
+    "--output",
+    type=click.Choice(["console", "json"]),
+    default="console",
+    help="Output format (default: console)"
+)
+@click.option(
     "--output-file",
     type=click.Path(),
     default=None,
@@ -251,7 +257,7 @@ def aws_scan(
     default="INFO",
     help="Logging level (default: INFO)"
 )
-def website_scan(url, output_file, log_level):
+def website_scan(url, output, output_file, log_level):
     """Scan website for AWS misconfigurations (Stage 1 of pentesting).
 
     Performs passive reconnaissance to identify AWS infrastructure and
@@ -268,6 +274,10 @@ def website_scan(url, output_file, log_level):
         cloudscan website-scan https://example.com --output-file findings.txt
 
         \b
+        # Output as JSON
+        cloudscan website-scan https://example.com --output json
+
+        \b
         # If AWS detected, proceed to deep scan
         cloudscan aws-scan --from-file aws-config.json
     """
@@ -281,7 +291,7 @@ def website_scan(url, output_file, log_level):
         aws_services = scanner.get_aws_services()
 
         # Format output
-        formatter = WebsiteOutputFormatter(output_file=output_file)
+        formatter = WebsiteOutputFormatter(output_file=output_file, output_format=output)
         formatted_output = formatter.format(url, indicators, aws_services)
         formatter.write(formatted_output)
 
