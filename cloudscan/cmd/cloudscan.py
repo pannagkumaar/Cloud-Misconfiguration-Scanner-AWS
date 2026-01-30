@@ -7,6 +7,7 @@ Implements the main command-line interface using Click.
 import click
 import logging
 import sys
+import json
 from pathlib import Path
 
 # Add parent directory to path for imports
@@ -15,6 +16,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from cloudscan.config import ScannerConfig
 from cloudscan.logger import setup_logging, get_logger
 from cloudscan.aws_client import AWSClient
+from cloudscan.collectors.manager import CollectorManager
+from cloudscan.engine.context import ScanContext
+from cloudscan.engine.rule_engine import RuleEngine
+from cloudscan.engine.finding import Severity
+from cloudscan.output.console import ConsoleOutputFormatter
+from cloudscan.output.json import JSONOutputFormatter, JSONLOutputFormatter
 
 logger = get_logger("cli")
 
@@ -142,21 +149,54 @@ def scan(
         account_id = aws_client.get_account_id()
         logger.info(f"Connected to AWS account: {account_id}")
 
-        # TODO: Implement actual scanning in Phase 2-3
-        click.echo("\n" + "=" * 70)
-        click.echo("Cloud Misconfiguration Scanner")
-        click.echo("=" * 70)
-        click.echo(f"Account ID: {account_id}")
-        click.echo(f"Region: {region}")
-        click.echo(f"Services: {', '.join(services) if services else 'all'}")
-        click.echo(f"Severity: {', '.join(severity) if severity else 'all'}")
-        click.echo("=" * 70)
-        click.echo("\n[INFO] Phase 1 complete. Scanner infrastructure ready.")
-        click.echo("\nNext phases:")
-        click.echo("  Phase 2: Service collectors (IAM, S3, EC2, RDS)")
-        click.echo("  Phase 3: Rule engine and security rules")
-        click.echo("  Phase 4: Output formatting")
-        click.echo("")
+        # PHASE 2: Collect AWS configuration
+        logger.info("Collecting AWS configuration...")
+        collector_manager = CollectorManager(aws_client)
+        services_to_collect = list(services) if services else ["iam", "s3", "ec2", "rds"]
+        collected_data = collector_manager.collect_all(services_to_collect)
+
+        # PHASE 3: Run security rules
+        logger.info("Running security rules...")
+        context = ScanContext(account_id, region, collected_data)
+
+        rule_engine = RuleEngine()
+        rule_engine.load_rules()
+        findings = rule_engine.evaluate(context)
+
+        # Filter by severity if specified
+        if severity:
+            severity_filter = [Severity[s] for s in severity]
+            findings = [f for f in findings if f.severity in severity_filter]
+
+        # PHASE 4: Format output
+        logger.info(f"Formatting output ({output} format)...")
+
+        if output == "json":
+            formatter = JSONOutputFormatter(output_file=output_file)
+        elif output == "jsonl":
+            formatter = JSONLOutputFormatter(output_file=output_file)
+        else:  # console
+            formatter = ConsoleOutputFormatter(output_file=output_file)
+
+        formatted_output = formatter.format(findings)
+        formatter.write(formatted_output)
+
+        # Determine exit code
+        if fail_on:
+            fail_on_severity = Severity[fail_on]
+            severity_order = {
+                Severity.CRITICAL: 0,
+                Severity.HIGH: 1,
+                Severity.MEDIUM: 2,
+                Severity.LOW: 3,
+            }
+
+            for finding in findings:
+                if severity_order.get(finding.severity, 99) <= severity_order.get(fail_on_severity, 99):
+                    logger.warning(f"Found {fail_on} severity finding, exiting with code 1")
+                    sys.exit(1)
+
+        logger.info("Scan complete")
 
     except Exception as e:
         logger.error(f"Scan failed: {e}", exc_info=True)
