@@ -388,10 +388,4 @@ python cloudscan/cmd/cloudscan.py > /tmp/findings.json
 ```
 
 
-## License
 
-MIT
-
----
-
-Built with 🛡️ for interviews and production use.
