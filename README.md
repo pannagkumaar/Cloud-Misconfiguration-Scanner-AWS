@@ -1,7 +1,8 @@
 # Cloud Misconfiguration Scanner for AWS 
 
-A production-style security scanner that detects real AWS misconfigurations with clear risk, evidence, and remediation guidance.
+:: Python / AWS / Boto3 / Requests / Click / JSON / YAML / CLI / Security / Regex / REST APIs ::
 
+A production-style security scanner that detects real AWS misconfigurations with clear risk, evidence, and remediation guidance.
 
 ## Quick Start
 
@@ -24,49 +25,6 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 ```
-
-### Two-Stage Pentesting Workflow
-
-**Stage 1: Website Reconnaissance (no credentials needed)**
-```bash
-python cloudscan/cmd/cloudscan.py website-scan https://example.com
-```
-Identifies AWS infrastructure, misconfigurations, security issues
-
-**Stage 2: Deep AWS Analysis (if you have AWS export)**
-```bash
-python cloudscan/cmd/cloudscan.py aws-scan --from-file aws-config.json
-```
-Detailed security analysis of AWS configurations
-
-### First Scan (AWS Account)
-
-**Option 1: Live Scanning (requires AWS credentials)**
-```bash
-python cloudscan/cmd/cloudscan.py aws-scan --profile default --severity HIGH CRITICAL
-```
-
-**Option 2: Offline Scanning (NO credentials needed - Perfect for pentesting!)**
-```bash
-# First export AWS configuration
-aws s3 iam ec2 rds > aws-config.json
-
-# Then scan it anytime, anywhere
-python cloudscan/cmd/cloudscan.py aws-scan --from-file aws-config.json
-```
-
-## Project Status
-
-| Phase | Description | Status |
-|-------|-------------|--------|
-| **0** | Project definition & scope | ✅ Complete |
-| **1** | Core architecture & CLI setup | ✅ Complete |
-| **2** | Service collectors (IAM, S3, EC2, RDS) | ✅ Complete |
-| **3** | Rule engine & security rules | ✅ Complete |
-| **4** | Output formatting (JSON, Console, SARIF) | ✅ Complete |
-| **5** | Offline scanning & pentesting mode | ✅ Complete |
-| **6** | Advanced features (auto-fix, CI/CD) | 🔲 Not Started |
-| **7** | Documentation & presentation | 🔲 Not Started |
 
 ## Architecture Overview
 
@@ -102,24 +60,22 @@ Output Formatter
 
 ## Design Principles
 
-### ✅ What Makes This Production-Ready
+**Separation of Concerns**
+- Collectors gather raw AWS data independently
+- Rules implement security logic separately  
+- Engine orchestrates the flow
+- Formatters handle output generation
 
-1. **Separation of Concerns**
-   - Collectors only gather raw AWS data
-   - Rules only implement security logic
-   - Engine orchestrates the flow
-   - Output handles formatting
+**Extensibility**
+- Add new AWS services without modifying rules
+- Add new rules without modifying collectors
+- Multiple output formats (Console, JSON, SARIF)
 
-2. **Extensibility**
-   - Add new AWS services without modifying rules
-   - Add new rules without modifying collectors
-   - Multiple output formats supported
-
-3. **Security First**
-   - Read-only IAM role (no modifications)
-   - No credential storage
-   - Uses boto3 credential chain
-   - Output sanitization for logs
+**Security First**
+- Read-only IAM role (no modifications)
+- No credential storage
+- Uses boto3 credential chain
+- Output sanitization for logs
 
 
 
@@ -187,7 +143,7 @@ Summary:
 }
 ```
 
-## Security Rules (Phase 3+)
+## Security Rules
 
 ### CIS AWS Foundations Benchmark
 
@@ -239,7 +195,7 @@ output:
 
 ## Usage
 
-### Website Scanner (Stage 1: Reconnaissance)
+### Website Scanning
 
 ```bash
 # Scan a website for AWS misconfigurations
@@ -247,24 +203,20 @@ python cloudscan/cmd/cloudscan.py website-scan https://example.com
 
 # Save findings to file
 python cloudscan/cmd/cloudscan.py website-scan https://example.com --output-file findings.txt
+
+# JSON output
+python cloudscan/cmd/cloudscan.py website-scan https://example.com --output json
 ```
 
-**What it checks:**
+**Checks:**
 - Security headers (HSTS, CSP, X-Frame-Options, etc.)
 - SSL/TLS certificate validity
 - AWS infrastructure detection (S3, CloudFront, RDS, etc.)
 - Error page information disclosure
-- DNS records
+- Exposed credentials (AWS keys, tokens)
+- Subdomain enumeration
 
-**Output:**
-- Severity levels: CRITICAL, HIGH, MEDIUM, LOW, INFO
-- Remediation guidance
-- AWS services detected (if any)
-- Next steps for deep analysis
-
-### AWS Scanner (Stage 2: Deep Analysis)
-
-#### Live Scanning (AWS Credentials Required)
+### AWS Scanning
 
 ```bash
 # Scan with default credentials
@@ -283,16 +235,16 @@ python cloudscan/cmd/cloudscan.py aws-scan --services iam s3
 python cloudscan/cmd/cloudscan.py aws-scan --output json > findings.json
 ```
 
-#### Offline Scanning (No Credentials Needed - Great for Pentesting!)
+### Offline Scanning
 
 ```bash
 # Export AWS config from account with access
 ./scripts/export_aws_config.sh > aws-export.json
 
-# Scan it offline on any machine - no credentials needed!
+# Scan it offline
 python cloudscan/cmd/cloudscan.py aws-scan --from-file aws-export.json
 
-# Share with security team or run in CI/CD without AWS creds
+# JSON output
 python cloudscan/cmd/cloudscan.py aws-scan --from-file aws-export.json --output json
 ```
 
@@ -309,60 +261,21 @@ python cloudscan/cmd/cloudscan.py aws-scan --log-level DEBUG
 python cloudscan/cmd/cloudscan.py aws-scan --from-file config.json --severity HIGH CRITICAL --output json --output-file findings.json
 ```
 
-## Architecture Decisions
+## Design
 
-### Separation of Concerns
+**Separation of Concerns**
+Collectors gather raw AWS data independently, rules implement security logic separately. This mirrors production tools like AWS Security Hub.
 
-**Q: Why separate collectors and rules?**
+**Read-Only Design**
+The scanner performs read-only assessment. No modifications or auto-fixes are applied, ensuring safe and auditable scanning.
 
-A: In production scanners, you want independent testing. Collectors can be tested with mocked AWS responses. Rules can be tested with sample configurations. This separation also mirrors how tools like AWS Security Hub work — they collect config, then evaluate it against rules.
-
-### Why Read-Only?
-
-**Q: Could the scanner auto-fix issues?**
-
-A: Not safely. Auto-fix requires:
-1. Human review (we're in Phase 6)
-2. Change management (not in scope)
-3. Rollback capability (risky)
-
-Read-only scanning eliminates these concerns and earns customer trust.
-
-### Why AWS-Only?
-
-**Q: Why AWS-only in Phase 1?**
-
-A: 80/20 rule. 80% of security work is cloud-provider-specific. By focusing on AWS first, we can:
-1. Deeply integrate with AWS services (CloudTrail, Config, Security Hub)
-2. Understand CIS AWS Benchmark thoroughly
-3. Build connectors for other clouds later without rearchitecting
-
-### Why CLI?
-
-**Q: Wouldn't a dashboard be more useful?**
-
-A: CLI is better for Phase 1 because:
-1. Simpler to test (no web framework complexity)
-2. Better for CI/CD integration
-3. Easier to version and distribute
-4. Dashboard can layer on top of JSON output later
+**CLI-Based**
+Command-line interface integrates with CI/CD pipelines and automation workflows. JSON output enables programmatic integration.
 
 ## Testing
 
-### Unit Tests (Phase 2+)
-
 ```bash
-pytest tests/test_collectors.py
-pytest tests/test_rules.py
-pytest tests/test_engine.py
-```
-
-### Integration Tests
-
-```bash
-./scripts/create_test_lab.sh
-python cloudscan/cmd/cloudscan.py > /tmp/findings.json
-./scripts/validate_findings.sh /tmp/findings.json
+pytest tests/
 ```
 
 
