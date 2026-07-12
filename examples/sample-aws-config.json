@@ -39,7 +39,17 @@
             "IsAttachable": true,
             "Description": "Admin policy with full access",
             "CreateDate": "2024-01-10T09:00:00Z",
-            "UpdateDate": "2024-01-10T09:00:00Z"
+            "UpdateDate": "2024-01-10T09:00:00Z",
+            "Document": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "*",
+                  "Resource": "*"
+                }
+              ]
+            }
           }
         ]
       }
@@ -49,11 +59,40 @@
         "Buckets": [
           {
             "Name": "public-logs-bucket",
-            "CreationDate": "2024-01-01T08:00:00Z"
+            "CreationDate": "2024-01-01T08:00:00Z",
+            "Policy": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": "*",
+                  "Action": "s3:GetObject",
+                  "Resource": "arn:aws:s3:::public-logs-bucket/*"
+                }
+              ]
+            },
+            "PublicAccessBlockConfiguration": {
+              "BlockPublicAcls": false,
+              "IgnorePublicAcls": false,
+              "BlockPublicPolicy": false,
+              "RestrictPublicBuckets": false
+            }
           },
           {
             "Name": "private-data-bucket",
-            "CreationDate": "2024-01-05T10:30:00Z"
+            "CreationDate": "2024-01-05T10:30:00Z",
+            "PublicAccessBlockConfiguration": {
+              "BlockPublicAcls": true,
+              "IgnorePublicAcls": true,
+              "BlockPublicPolicy": true,
+              "RestrictPublicBuckets": true
+            },
+            "ServerSideEncryptionConfiguration": {
+              "Rules": [
+                {"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}
+              ]
+            },
+            "VersioningConfiguration": {"Status": "Enabled"}
           }
         ]
       }

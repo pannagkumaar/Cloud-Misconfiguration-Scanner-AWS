@@ -11,6 +11,7 @@ import yaml
 from pathlib import Path
 from typing import Dict, Any, Optional
 from cloudscan.loaders.base import BaseLoader
+from cloudscan.loaders.normalize import normalize_collected_data
 
 
 logger = logging.getLogger(__name__)
@@ -51,8 +52,9 @@ class FileLoader(BaseLoader):
         
         try:
             data = self._load_file()
-            
+
             if self.validate_structure(data):
+                data = normalize_collected_data(data)
                 self.logger.info(
                     f"Successfully loaded {len(data['services'])} services "
                     f"from {self.file_path.name}"

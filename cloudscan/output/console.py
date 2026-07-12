@@ -182,13 +182,13 @@ class ConsoleOutputFormatter(BaseOutputFormatter):
         if len(findings) > 0:
             lines.append(
                 self._colored(
-                    "⚠️  Address CRITICAL and HIGH findings immediately",
+                    "[!] Address CRITICAL and HIGH findings immediately",
                     "red"
                 )
             )
         else:
             lines.append(
-                self._colored("✓ No findings. Well done!", "green")
+                self._colored("[OK] No findings. Well done!", "green")
             )
 
         lines.append("")

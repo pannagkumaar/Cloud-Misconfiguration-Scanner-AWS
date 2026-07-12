@@ -62,7 +62,7 @@ class S3PublicBucketRule(BaseRule):
     def _is_publicly_accessible(self, bucket: dict) -> bool:
         """Check if bucket is publicly accessible."""
         # Check public access block
-        pub_block = bucket.get("public_access_block", {})
+        pub_block = bucket.get("public_access_block") or {}
         if not (pub_block.get("block_public_acls") and 
                 pub_block.get("block_public_policy")):
             # Not fully blocked, check policy and ACL
@@ -95,7 +95,7 @@ class S3PublicBucketRule(BaseRule):
 
     def _has_public_acl(self, bucket: dict) -> bool:
         """Check if bucket ACL allows public access."""
-        acl = bucket.get("acl", {})
+        acl = bucket.get("acl") or {}
         grants = acl.get("grants", [])
 
         for grant in grants:
