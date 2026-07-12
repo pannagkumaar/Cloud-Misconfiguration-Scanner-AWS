@@ -133,10 +133,10 @@ def aws_scan(
 
     Supports two modes:
     1. LIVE MODE (requires AWS credentials):
-       cloudscan scan --profile myprofile --region us-east-1
+       cloudscan aws-scan --profile myprofile --region us-east-1
 
     2. OFFLINE MODE (no credentials needed):
-       cloudscan scan --from-file exported-config.json
+       cloudscan aws-scan --from-file exported-config.json
 
     Perfect for pentesting - analyze exported configs offline!
 
@@ -144,27 +144,27 @@ def aws_scan(
 
         \b
         # Live scan from AWS
-        cloudscan scan
+        cloudscan aws-scan
 
         \b
         # Scan exported configuration (no AWS access needed!)
-        cloudscan scan --from-file /path/to/aws-config.json
+        cloudscan aws-scan --from-file /path/to/aws-config.json
 
         \b
         # Scan specific services
-        cloudscan scan --services s3 ec2
+        cloudscan aws-scan --services s3 ec2
 
         \b
         # Filter by severity
-        cloudscan scan --severity CRITICAL HIGH
+        cloudscan aws-scan --severity CRITICAL HIGH
 
         \b
         # Output to JSON
-        cloudscan scan --output json --output-file findings.json
+        cloudscan aws-scan --output json --output-file findings.json
 
         \b
         # Fail on CRITICAL findings
-        cloudscan scan --fail-on CRITICAL
+        cloudscan aws-scan --fail-on CRITICAL
     """
     # Setup logging
     setup_logging(log_level=log_level)
@@ -208,7 +208,6 @@ def aws_scan(
         # Load configuration data
         collected_data = loader.load()
 
-        # PHASE 3: Run security rules
         logger.info("Running security rules...")
         context = ScanContext(account_id, region, collected_data)
 
@@ -229,7 +228,6 @@ def aws_scan(
         if framework:
             findings = filter_findings_by_framework(findings, rule_engine.rules, framework)
 
-        # PHASE 4: Format output
         logger.info(f"Formatting output ({output} format)...")
 
         if output == "json":
