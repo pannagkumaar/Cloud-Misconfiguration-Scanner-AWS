@@ -18,9 +18,9 @@ echo ""
 export_service() {
     local service=$1
     local description=$2
-    
+
     echo "📦 Exporting $service ($description)..."
-    
+
     case $service in
         iam)
             # Export IAM
@@ -62,13 +62,13 @@ export_service() {
     echo "{"
     echo '  "services": ["iam", "s3", "ec2", "rds"],'
     echo '  "data": {'
-    
+
     # Export each service
     iam_export=$(export_service "iam" "Identity and Access Management" 2>/dev/null)
     s3_export=$(export_service "s3" "Simple Storage Service" 2>/dev/null)
     ec2_export=$(export_service "ec2" "Elastic Compute Cloud" 2>/dev/null)
     rds_export=$(export_service "rds" "Relational Database Service" 2>/dev/null)
-    
+
     echo "    \"iam\": $iam_export,"
     echo "    \"s3\": $s3_export,"
     echo "    \"ec2\": $ec2_export,"

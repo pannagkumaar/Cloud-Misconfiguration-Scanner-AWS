@@ -197,4 +197,3 @@ class WebsiteOutputFormatter:
             logger.info(f"Output written to {self.output_file}")
         else:
             print(content)
-

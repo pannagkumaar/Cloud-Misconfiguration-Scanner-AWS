@@ -14,7 +14,7 @@ scanner:
     - s3
     - ec2
     - rds
-  
+
   # Severity levels to include in output
   severity_levels:
     - CRITICAL
@@ -22,7 +22,7 @@ scanner:
     - MEDIUM
     - LOW
     - INFO
-  
+
   # CIS Benchmark version
   cis_version: 1.5.0
 

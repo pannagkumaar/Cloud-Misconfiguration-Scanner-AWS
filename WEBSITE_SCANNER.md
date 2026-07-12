@@ -13,7 +13,7 @@ cloudscan website-scan https://target.com
 - Finds security misconfigurations exposed on website
 - NO credentials required
 
-### Stage 2: Deep AWS Analysis  
+### Stage 2: Deep AWS Analysis
 ```bash
 cloudscan aws-scan --from-file aws-config.json
 ```
@@ -39,7 +39,7 @@ cloudscan aws-scan --from-file aws-config.json
 Checks for:
 - ✅ Strict-Transport-Security (HSTS)
 - ✅ X-Content-Type-Options
-- ✅ X-Frame-Options  
+- ✅ X-Frame-Options
 - ✅ Content-Security-Policy (CSP)
 - ✅ X-XSS-Protection
 
@@ -78,7 +78,7 @@ Timestamp: 2026-01-30T13:18:40Z
 
 AWS Infrastructure Detected:
   Services found: S3, CLOUDFRONT
-  
+
   RECOMMENDATION: Switch to AWS Scanner for deep analysis
   Command: cloudscan aws-scan --from-file <aws-config.json>
 
@@ -154,7 +154,7 @@ $ cloudscan aws-scan --from-file client-aws.json
 
 Found:
 - S3 bucket with public access (CRITICAL)
-- Security group open to 0.0.0.0/0 (HIGH)  
+- Security group open to 0.0.0.0/0 (HIGH)
 - IAM wildcard policies (CRITICAL)
 - RDS instance without encryption (HIGH)
 ```

@@ -458,4 +458,3 @@ class WebsiteScanner:
     def has_aws_presence(self) -> bool:
         """Check if website appears to use AWS."""
         return len(self.get_aws_services()) > 0
-

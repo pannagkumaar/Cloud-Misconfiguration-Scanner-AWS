@@ -1,4 +1,4 @@
-# Cloud Misconfiguration Scanner for AWS 
+# Cloud Misconfiguration Scanner for AWS
 
 [![CI](https://github.com/pannagkumaar/Cloud-Misconfiguration-Scanner-AWS/actions/workflows/ci.yml/badge.svg)](https://github.com/pannagkumaar/Cloud-Misconfiguration-Scanner-AWS/actions/workflows/ci.yml)
 
@@ -64,7 +64,7 @@ Output Formatter
 
 **Separation of Concerns**
 - Collectors gather raw AWS data independently
-- Rules implement security logic separately  
+- Rules implement security logic separately
 - Engine orchestrates the flow
 - Formatters handle output generation
 
@@ -185,11 +185,11 @@ Edit [config.yaml](config.yaml):
 aws:
   region: us-east-1
   profile: default
-  
+
 scanner:
   services: [iam, s3, ec2, rds]
   severity_levels: [CRITICAL, HIGH, MEDIUM]
-  
+
 output:
   format: console  # console, json, sarif
   file: findings.json
@@ -315,6 +315,3 @@ pytest tests/
   ]
 }
 ```
-
-
-
