@@ -9,10 +9,36 @@ Each rule:
 
 import logging
 from abc import ABC, abstractmethod
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from cloudscan.engine.context import ScanContext
 from cloudscan.engine.finding import Finding, Severity
+
+
+def parse_iso(value) -> Optional[datetime]:
+    """Parse an ISO8601 timestamp string into a timezone-aware datetime.
+
+    Returns None for missing/unparseable values instead of raising, since
+    credential report fields are frequently "N/A" or absent.
+    """
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except (ValueError, TypeError):
+        return None
+
+
+def days_since(value) -> Optional[int]:
+    """Days elapsed since an ISO8601 timestamp, or None if unparseable."""
+    dt = parse_iso(value)
+    if dt is None:
+        return None
+    return (datetime.now(timezone.utc) - dt).days
 
 
 class BaseRule(ABC):
