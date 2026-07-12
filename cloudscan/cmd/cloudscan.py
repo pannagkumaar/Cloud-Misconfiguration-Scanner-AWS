@@ -19,6 +19,11 @@ if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from cloudscan.aws_client import AWSClient
+from cloudscan.compliance.mappings import (
+    build_cis_coverage,
+    filter_findings_by_framework,
+    format_coverage_summary,
+)
 from cloudscan.config import ScannerConfig
 from cloudscan.engine.context import ScanContext
 from cloudscan.engine.finding import Severity
@@ -103,6 +108,12 @@ def cli():
     default=None,
     help="Exit with code 1 if findings at this severity or higher are found"
 )
+@click.option(
+    "--framework",
+    type=click.Choice(["cis"]),
+    default=None,
+    help="Filter findings to a compliance framework and print a coverage summary"
+)
 def aws_scan(
     config,
     from_file,
@@ -113,7 +124,8 @@ def aws_scan(
     output,
     output_file,
     log_level,
-    fail_on
+    fail_on,
+    framework
 ):
     """Scan for security misconfigurations.
 
@@ -200,12 +212,20 @@ def aws_scan(
 
         rule_engine = RuleEngine()
         rule_engine.load_rules()
-        findings = rule_engine.evaluate(context)
+        all_findings = rule_engine.evaluate(context)
+        findings = all_findings
 
         # Filter by severity if specified
         if severity:
             severity_filter = [Severity[s] for s in severity]
             findings = [f for f in findings if f.severity in severity_filter]
+
+        # Filter to a compliance framework's findings if specified. The
+        # coverage summary below always reflects the full, unfiltered
+        # evaluation -- a control's pass/fail status shouldn't change
+        # based on a --severity display filter.
+        if framework:
+            findings = filter_findings_by_framework(findings, rule_engine.rules, framework)
 
         # PHASE 4: Format output
         logger.info(f"Formatting output ({output} format)...")
@@ -219,6 +239,10 @@ def aws_scan(
 
         formatted_output = formatter.format(findings)
         formatter.write(formatted_output)
+
+        if framework == "cis":
+            coverage = build_cis_coverage(rule_engine.rules, all_findings)
+            click.echo(format_coverage_summary(coverage))
 
         # Determine exit code
         if fail_on:
@@ -350,10 +374,11 @@ def validate():
 @click.option("--output-file", type=click.Path(), default=None)
 @click.option("--log-level", type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR"]), default="INFO")
 @click.option("--fail-on", type=click.Choice(["CRITICAL", "HIGH", "MEDIUM", "LOW"]), default=None)
-def scan(config, from_file, profile, region, services, severity, output, output_file, log_level, fail_on):
+@click.option("--framework", type=click.Choice(["cis"]), default=None)
+def scan(config, from_file, profile, region, services, severity, output, output_file, log_level, fail_on, framework):
     """Scan for misconfigurations (alias for aws-scan for backward compatibility)."""
     # Delegate to aws_scan
-    return aws_scan.callback(config, from_file, profile, region, services, severity, output, output_file, log_level, fail_on)
+    return aws_scan.callback(config, from_file, profile, region, services, severity, output, output_file, log_level, fail_on, framework)
 
 
 @cli.command()
