@@ -12,6 +12,7 @@ from typing import List
 
 from cloudscan.engine.context import ScanContext
 from cloudscan.engine.finding import Finding, Severity
+from cloudscan.engine.scoring import score_findings
 from cloudscan.rules.base import BaseRule
 
 logger = logging.getLogger(__name__)
@@ -106,17 +107,12 @@ class RuleEngine:
             except Exception as e:
                 self.logger.error(f"Error evaluating rule {rule.id}: {e}")
 
-        # Sort by severity (CRITICAL -> INFO)
-        severity_order = {
-            Severity.CRITICAL: 0,
-            Severity.HIGH: 1,
-            Severity.MEDIUM: 2,
-            Severity.LOW: 3,
-            Severity.INFO: 4,
-        }
-        all_findings.sort(
-            key=lambda f: severity_order.get(f.severity, 99)
-        )
+        # Score and sort (highest risk first). Score is bounded per
+        # severity tier so this always sorts CRITICAL -> INFO overall,
+        # while also differentiating findings within the same tier (e.g.
+        # a HIGH indicating internet exposure outranks a same-severity
+        # HIGH that doesn't).
+        all_findings = score_findings(all_findings)
 
         self.logger.info(f"Evaluation complete: {len(all_findings)} findings")
         return all_findings

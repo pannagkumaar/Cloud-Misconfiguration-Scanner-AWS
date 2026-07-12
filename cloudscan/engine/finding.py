@@ -55,6 +55,9 @@ class Finding:
     )
     scan_id: Optional[str] = None       # ID of the scan that found this
 
+    # Risk scoring
+    score: Optional[int] = None         # 0-100, set by engine.scoring.score_findings()
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert finding to dictionary for JSON output."""
         return {
@@ -62,6 +65,7 @@ class Finding:
             "title": self.title,
             "description": self.description,
             "severity": self.severity.value,
+            "score": self.score,
             "service": self.service,
             "cis_id": self.cis_id,
             "resource": {
