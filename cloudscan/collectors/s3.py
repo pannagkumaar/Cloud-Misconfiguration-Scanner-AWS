@@ -81,7 +81,9 @@ class S3Collector(BaseCollector):
                     bucket_data["policy"] = json.loads(
                         policy_response.get("Policy", "{}")
                     )
-                except s3_client.exceptions.NoSuchBucketPolicy:
+                except ClientError as e:
+                    if self._error_code(e) != "NoSuchBucketPolicy":
+                        self.logger.debug(f"Error getting policy for {bucket_name}: {e}")
                     bucket_data["policy"] = None
                 except Exception as e:
                     self.logger.debug(f"Error getting policy for {bucket_name}: {e}")
@@ -115,7 +117,9 @@ class S3Collector(BaseCollector):
                             "PublicAccessBlockConfiguration", {}
                         ).get("RestrictPublicBuckets"),
                     }
-                except s3_client.exceptions.NoSuchPublicAccessBlockConfiguration:
+                except ClientError as e:
+                    if self._error_code(e) != "NoSuchPublicAccessBlockConfiguration":
+                        self.logger.debug(f"Error getting public access block for {bucket_name}: {e}")
                     bucket_data["public_access_block"] = {
                         "block_public_acls": False,
                         "ignore_public_acls": False,
@@ -154,7 +158,9 @@ class S3Collector(BaseCollector):
                     bucket_data["encryption"] = encryption_response.get(
                         "ServerSideEncryptionConfiguration", {}
                     )
-                except s3_client.exceptions.ServerSideEncryptionConfigurationNotFoundError:
+                except ClientError as e:
+                    if self._error_code(e) != "ServerSideEncryptionConfigurationNotFoundError":
+                        self.logger.debug(f"Error getting encryption for {bucket_name}: {e}")
                     bucket_data["encryption"] = None
                 except Exception as e:
                     self.logger.debug(f"Error getting encryption for {bucket_name}: {e}")
@@ -166,7 +172,9 @@ class S3Collector(BaseCollector):
                         tag["Key"]: tag["Value"]
                         for tag in tags_response.get("TagSet", [])
                     }
-                except s3_client.exceptions.NoSuchTagSet:
+                except ClientError as e:
+                    if self._error_code(e) != "NoSuchTagSet":
+                        self.logger.debug(f"Error getting tags for {bucket_name}: {e}")
                     bucket_data["tags"] = {}
                 except Exception as e:
                     self.logger.debug(f"Error getting tags for {bucket_name}: {e}")
@@ -179,6 +187,26 @@ class S3Collector(BaseCollector):
         except Exception as e:
             self.logger.error(f"Error collecting buckets: {e}")
             return []
+
+    @staticmethod
+    def _error_code(error: ClientError) -> str:
+        """
+        Extract the AWS error code (e.g. "NoSuchBucketPolicy") from a
+        ClientError.
+
+        Deliberately used instead of catching dynamically-generated
+        exception subclasses like s3_client.exceptions.NoSuchBucketPolicy:
+        botocore only builds those subclasses for error codes it finds
+        modeled on the operations it knows about, and several expected S3
+        "not found" codes (NoSuchBucketPolicy, NoSuchTagSet,
+        NoSuchPublicAccessBlockConfiguration,
+        ServerSideEncryptionConfigurationNotFoundError) are not present as
+        attributes on current botocore versions' generated exception
+        factory -- referencing them raises AttributeError instead of
+        catching the intended error, which aborts the entire bucket
+        collection loop.
+        """
+        return error.response.get("Error", {}).get("Code", "")
 
     def _get_bucket_region(self, s3_client, bucket_name: str) -> str:
         """
