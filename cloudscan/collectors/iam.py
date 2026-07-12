@@ -10,6 +10,9 @@ Gathers:
 - Root account activity
 """
 
+import csv
+import io
+import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
@@ -42,6 +45,7 @@ class IAMCollector(BaseCollector):
                 "policies": self._collect_policies(iam_client),
                 "account_summary": self._collect_account_summary(iam_client),
                 "credential_report": self._collect_credential_report(iam_client),
+                "password_policy": self._collect_password_policy(iam_client),
             }
 
             self.logger.info(f"IAM collection complete: {len(result['users'])} users, "
@@ -294,23 +298,116 @@ class IAMCollector(BaseCollector):
 
     def _collect_credential_report(self, iam_client) -> Dict[str, Any]:
         """
-        Collect IAM credential report (for root account MFA check).
+        Collect and parse the IAM credential report.
+
+        This unlocks account-level checks that need per-credential state
+        AWS doesn't expose any other way: root account MFA/access keys,
+        per-user MFA status, and access key age/last-used, all in one CSV.
 
         Returns:
-            Credential report data
+            Credential report data, including parsed per-user/root rows
         """
         try:
-            # Request credential report
-            iam_client.generate_credential_report()
+            report_bytes = self._generate_and_fetch_report(iam_client)
+            rows = self._parse_credential_report(report_bytes)
 
-            # Get the report
-            response = iam_client.get_credential_report()
-            # Report is in CSV format, we'll just note it was collected
             return {
                 "available": True,
-                "generated": response.get("GeneratedTime", datetime.now(timezone.utc)).isoformat(),
+                "generated": datetime.now(timezone.utc).isoformat(),
+                "rows": rows,
             }
 
         except Exception as e:
             self.logger.error(f"Error collecting credential report: {e}")
-            return {"available": False, "error": str(e)}
+            return {"available": False, "error": str(e), "rows": []}
+
+    def _generate_and_fetch_report(self, iam_client, max_attempts: int = 5) -> bytes:
+        """
+        Request credential report generation and poll until it's ready.
+
+        AWS generates the report asynchronously: generate_credential_report()
+        returns a State of STARTED/INPROGRESS immediately, and callers must
+        poll (typically via repeated generate_credential_report() calls)
+        until State is COMPLETE before get_credential_report() succeeds.
+        """
+        for attempt in range(max_attempts):
+            state = iam_client.generate_credential_report().get("State")
+            if state == "COMPLETE":
+                break
+            time.sleep(0.5 * (attempt + 1))
+
+        response = iam_client.get_credential_report()
+        return response["Content"]
+
+    def _parse_credential_report(self, report_bytes: bytes) -> List[Dict[str, Any]]:
+        """
+        Parse the credential report CSV into structured rows.
+
+        CSV columns (per AWS docs): user, arn, user_creation_time,
+        password_enabled, password_last_used, password_last_changed,
+        password_next_rotation, mfa_active, access_key_1_active,
+        access_key_1_last_rotated, access_key_1_last_used_date, ...,
+        access_key_2_active, access_key_2_last_rotated,
+        access_key_2_last_used_date, ...
+        """
+        content = report_bytes.decode("utf-8") if isinstance(report_bytes, bytes) else report_bytes
+        reader = csv.DictReader(io.StringIO(content))
+
+        rows = []
+        for row in reader:
+            user = row.get("user", "")
+            rows.append({
+                "user": user,
+                "arn": row.get("arn", ""),
+                "is_root": user == "<root_account>",
+                "mfa_active": self._csv_bool(row.get("mfa_active")),
+                "password_enabled": self._csv_bool(row.get("password_enabled")),
+                "password_last_used": self._csv_optional(row.get("password_last_used")),
+                "access_key_1_active": self._csv_bool(row.get("access_key_1_active")),
+                "access_key_1_last_rotated": self._csv_optional(row.get("access_key_1_last_rotated")),
+                "access_key_1_last_used": self._csv_optional(row.get("access_key_1_last_used_date")),
+                "access_key_2_active": self._csv_bool(row.get("access_key_2_active")),
+                "access_key_2_last_rotated": self._csv_optional(row.get("access_key_2_last_rotated")),
+                "access_key_2_last_used": self._csv_optional(row.get("access_key_2_last_used_date")),
+            })
+
+        return rows
+
+    @staticmethod
+    def _csv_bool(value: Any) -> bool:
+        return str(value).strip().lower() == "true"
+
+    @staticmethod
+    def _csv_optional(value: Any):
+        v = str(value).strip() if value is not None else ""
+        return None if v in ("", "N/A", "not_supported") else v
+
+    def _collect_password_policy(self, iam_client) -> Dict[str, Any]:
+        """
+        Collect the account password policy.
+
+        Returns:
+            Password policy dictionary, or {"exists": False} if the
+            account has no custom password policy set (AWS default applies)
+        """
+        try:
+            response = iam_client.get_account_password_policy()
+            policy = response.get("PasswordPolicy", {})
+            return {
+                "exists": True,
+                "minimum_password_length": policy.get("MinimumPasswordLength"),
+                "require_symbols": policy.get("RequireSymbols"),
+                "require_numbers": policy.get("RequireNumbers"),
+                "require_uppercase_characters": policy.get("RequireUppercaseCharacters"),
+                "require_lowercase_characters": policy.get("RequireLowercaseCharacters"),
+                "max_password_age": policy.get("MaxPasswordAge"),
+                "password_reuse_prevention": policy.get("PasswordReusePrevention"),
+            }
+        except ClientError as e:
+            if e.response.get("Error", {}).get("Code") == "NoSuchEntity":
+                return {"exists": False}
+            self.logger.error(f"Error collecting password policy: {e}")
+            return {"exists": False}
+        except Exception as e:
+            self.logger.error(f"Error collecting password policy: {e}")
+            return {"exists": False}

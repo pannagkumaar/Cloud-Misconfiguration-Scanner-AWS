@@ -5,7 +5,7 @@ Provides rule engines with access to collected AWS data.
 """
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +57,21 @@ class ScanContext:
     def get_credential_report(self) -> Dict[str, Any]:
         """Get IAM credential report metadata."""
         return self.get_service_data("iam").get("credential_report", {})
+
+    def get_credential_report_rows(self) -> list:
+        """Get parsed IAM credential report rows (one per user, plus root)."""
+        return self.get_credential_report().get("rows", [])
+
+    def get_root_credential_row(self) -> Optional[Dict[str, Any]]:
+        """Get the credential report row for the root account, if available."""
+        for row in self.get_credential_report_rows():
+            if row.get("is_root"):
+                return row
+        return None
+
+    def get_password_policy(self) -> Dict[str, Any]:
+        """Get the account password policy."""
+        return self.get_service_data("iam").get("password_policy", {"exists": False})
 
     def get_s3_buckets(self) -> list:
         """Get all S3 buckets."""
