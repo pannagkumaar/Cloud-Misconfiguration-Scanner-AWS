@@ -51,6 +51,6 @@ def test_sample_file_does_not_flag_known_good_resources():
 
 def test_sample_file_rds_finding_is_critical():
     findings = _scan_sample()
-    rds_findings = [f for f in findings if f.resource_id == "prod-mysql-db"]
-    assert len(rds_findings) == 1
-    assert rds_findings[0].severity.value == "CRITICAL"
+    rds001_findings = [f for f in findings if f.resource_id == "prod-mysql-db" and f.rule_id == "RDS-001"]
+    assert len(rds001_findings) == 1
+    assert rds001_findings[0].severity.value == "CRITICAL"

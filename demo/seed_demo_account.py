@@ -147,6 +147,8 @@ def _seed_rds(aws_client: AWSClient) -> None:
         Engine="postgres", DBInstanceClass="db.t3.micro",
         MasterUsername="admin", MasterUserPassword="SuperSecret123!",
         AllocatedStorage=20, PubliclyAccessible=False, StorageEncrypted=True,
+        BackupRetentionPeriod=7, DeletionProtection=True, MultiAZ=True,
+        AutoMinorVersionUpgrade=True,
     )
 
 

@@ -99,14 +99,17 @@ class TestMotoIntegration:
 
     def test_public_unencrypted_rds_flagged_critical(self):
         findings = _run_full_scan()
-        rds_findings = [f for f in findings if f.resource_id == PUBLIC_DB]
-        assert len(rds_findings) == 1
-        assert rds_findings[0].severity.value == "CRITICAL"
+        rds001_findings = [f for f in findings if f.resource_id == PUBLIC_DB and f.rule_id == "RDS-001"]
+        assert len(rds001_findings) == 1
+        assert rds001_findings[0].severity.value == "CRITICAL"
 
     def test_secure_rds_not_flagged(self):
+        """SECURE_DB is hardened against every gap the RDS rules check
+        (public access, encryption, backup retention, deletion
+        protection, Multi-AZ, auto minor version upgrade)."""
         findings = _run_full_scan()
-        ids = {f.resource_id for f in findings}
-        assert SECURE_DB not in ids
+        secure_db_findings = [f for f in findings if f.resource_id == SECURE_DB]
+        assert secure_db_findings == []
 
     def test_expected_rule_ids_present(self):
         findings = _run_full_scan()

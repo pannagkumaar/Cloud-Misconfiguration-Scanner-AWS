@@ -222,6 +222,8 @@
             "StorageEncrypted": true,
             "BackupRetentionPeriod": 7,
             "DeletionProtection": true,
+            "MultiAZ": true,
+            "AutoMinorVersionUpgrade": true,
             "Endpoint": {
               "Address": "dev-postgres-db.c9akciq32.us-east-1.rds.amazonaws.com",
               "Port": 5432
