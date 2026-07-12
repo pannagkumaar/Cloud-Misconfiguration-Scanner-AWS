@@ -50,6 +50,8 @@ class BaseRule(ABC):
         evidence: dict,
         remediation: str,
         remediation_url: str = "",
+        severity: Optional[Severity] = None,
+        title: Optional[str] = None,
     ) -> Finding:
         """
         Create a finding from this rule.
@@ -61,15 +63,19 @@ class BaseRule(ABC):
             evidence: Dictionary with evidence data
             remediation: Remediation steps
             remediation_url: Optional AWS documentation link
+            severity: Override the rule's class-level severity for this
+                specific finding (e.g. a rule that reports different
+                severities depending on which conditions were met)
+            title: Override the rule's class-level title for this finding
 
         Returns:
             Finding instance
         """
         return Finding(
             rule_id=self.id,
-            title=self.title,
+            title=title if title is not None else self.title,
             description=self.description,
-            severity=self.severity,
+            severity=severity if severity is not None else self.severity,
             service=self.service,
             cis_id=self.cis_id,
             resource_id=resource_id,

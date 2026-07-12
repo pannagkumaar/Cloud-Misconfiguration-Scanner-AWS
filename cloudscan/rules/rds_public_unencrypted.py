@@ -89,6 +89,8 @@ class RDSPublicUnencryptedRule(BaseRule):
                 finding = self._create_finding(
                     resource_id=instance["id"],
                     resource_type="RDS Instance",
+                    severity=Severity.HIGH,
+                    title="RDS instance is publicly accessible",
                     risk=(
                         "Database is publicly accessible on the internet, "
                         "allowing anyone to attempt connections and brute-force credentials"
@@ -120,6 +122,8 @@ class RDSPublicUnencryptedRule(BaseRule):
                 finding = self._create_finding(
                     resource_id=instance["id"],
                     resource_type="RDS Instance",
+                    severity=Severity.HIGH,
+                    title="RDS instance is not encrypted at rest",
                     risk=(
                         "Database data is not encrypted at rest, allowing data "
                         "exfiltration if storage is accessed directly"
