@@ -5,10 +5,10 @@ Handles AWS credential configuration and boto3 client creation.
 """
 
 import logging
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
-
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class AWSClient:
 
         try:
             self.session = boto3.Session(**session_kwargs)
-        except NoCredentialsError as e:
+        except NoCredentialsError:
             logger.error(
                 "AWS credentials not found. Configure via ~/.aws/credentials or env vars"
             )

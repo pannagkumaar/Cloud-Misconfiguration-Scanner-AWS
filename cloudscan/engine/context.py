@@ -4,9 +4,8 @@ Scan context - Represents the AWS configuration being scanned.
 Provides rule engines with access to collected AWS data.
 """
 
-from typing import Dict, Any, Optional
 import logging
-
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 

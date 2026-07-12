@@ -8,10 +8,10 @@ Detects S3 buckets that are publicly accessible through:
 """
 
 from typing import List
-import json
-from cloudscan.rules.base import BaseRule
+
 from cloudscan.engine.context import ScanContext
 from cloudscan.engine.finding import Finding, Severity
+from cloudscan.rules.base import BaseRule
 
 
 class S3PublicBucketRule(BaseRule):
@@ -63,7 +63,7 @@ class S3PublicBucketRule(BaseRule):
         """Check if bucket is publicly accessible."""
         # Check public access block
         pub_block = bucket.get("public_access_block") or {}
-        if not (pub_block.get("block_public_acls") and 
+        if not (pub_block.get("block_public_acls") and
                 pub_block.get("block_public_policy")):
             # Not fully blocked, check policy and ACL
             if self._has_public_policy(bucket) or self._has_public_acl(bucket):

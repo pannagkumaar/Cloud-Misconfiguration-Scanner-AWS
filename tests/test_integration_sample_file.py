@@ -9,8 +9,8 @@ and its known-good resources must not be.
 
 from pathlib import Path
 
-from cloudscan.engine.rule_engine import RuleEngine
 from cloudscan.engine.context import ScanContext
+from cloudscan.engine.rule_engine import RuleEngine
 from cloudscan.loaders.file_loader import FileLoader
 
 SAMPLE_FILE = Path(__file__).parent.parent / "examples" / "sample-aws-config.json"

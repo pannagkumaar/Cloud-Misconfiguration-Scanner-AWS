@@ -5,10 +5,9 @@ Provides abstract interface for loading configurations from different sources
 (AWS APIs, JSON files, CloudFormation exports, etc.).
 """
 
-from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, List
 import logging
-
+from abc import ABC, abstractmethod
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 

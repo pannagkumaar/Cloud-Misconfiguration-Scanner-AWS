@@ -1,6 +1,5 @@
 """Tests for ScannerConfig: YAML loading, dotted-key lookup, env overrides."""
 
-import os
 
 import pytest
 

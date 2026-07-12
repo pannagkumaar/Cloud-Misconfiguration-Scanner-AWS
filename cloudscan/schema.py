@@ -212,7 +212,6 @@ CloudTrail (NEW)
 
 from typing import Any, Dict, List
 
-
 # Canonical top-level keys expected under data["data"][<service>]
 IAM_SHAPE = {
     "users", "roles", "policies", "account_summary",

@@ -2,13 +2,13 @@
 Website Scanner Output Formatter - Formats website scan results.
 """
 
-import logging
 import json
-from typing import List, Dict, Any
+import logging
 from datetime import datetime, timezone
+from typing import Any, List
 
 try:
-    from colorama import Fore, Back, Style
+    from colorama import Fore, Style
     HAS_COLORAMA = True
 except ImportError:
     HAS_COLORAMA = False
@@ -104,7 +104,6 @@ class WebsiteOutputFormatter:
                 if severity in by_severity:
                     color = self.SEVERITY_COLORS.get(severity, '')
                     reset = Style.RESET_ALL if HAS_COLORAMA else ''
-                    type_name = self.INDICATOR_TYPE_NAMES.get(by_severity[severity][0].indicator_type, by_severity[severity][0].indicator_type)
 
                     output.append(f"{color}[{severity}]{reset} {severity} Severity Indicators ({len(by_severity[severity])})")
                     output.append("-" * 80)
@@ -138,7 +137,7 @@ class WebsiteOutputFormatter:
         for indicator in indicators:
             itype = self.INDICATOR_TYPE_NAMES.get(indicator.indicator_type, indicator.indicator_type)
             indicator_types[itype] = indicator_types.get(itype, 0) + 1
-        
+
         if indicator_types:
             output.append("Indicator Types:")
             for itype, count in sorted(indicator_types.items()):

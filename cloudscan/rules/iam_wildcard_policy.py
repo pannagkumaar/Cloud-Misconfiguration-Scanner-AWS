@@ -5,10 +5,11 @@ Detects IAM policies that grant overly broad permissions with * (all actions)
 on * (all resources), violating the principle of least privilege.
 """
 
-from typing import List, Dict, Any
-from cloudscan.rules.base import BaseRule
+from typing import Any, Dict, List
+
 from cloudscan.engine.context import ScanContext
 from cloudscan.engine.finding import Finding, Severity
+from cloudscan.rules.base import BaseRule
 
 
 class IAMWildcardPolicyRule(BaseRule):

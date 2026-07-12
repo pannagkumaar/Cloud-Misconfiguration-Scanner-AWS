@@ -5,11 +5,12 @@ Uses colors, tables, and formatting for readability.
 """
 
 from typing import List
+
 from cloudscan.engine.finding import Finding
 from cloudscan.output.base import BaseOutputFormatter
 
 try:
-    from colorama import Fore, Back, Style, init
+    from colorama import Fore, Style, init
     init(autoreset=True)
     HAS_COLORS = True
 except ImportError:
@@ -111,7 +112,7 @@ class ConsoleOutputFormatter(BaseOutputFormatter):
 
         # Remediation
         if finding.remediation:
-            lines.append(f"    Remediation:")
+            lines.append("    Remediation:")
             for line in finding.remediation.split("\n"):
                 lines.append(f"      {line}")
 

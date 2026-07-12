@@ -9,9 +9,10 @@ This combination is particularly dangerous for databases.
 """
 
 from typing import List
-from cloudscan.rules.base import BaseRule
+
 from cloudscan.engine.context import ScanContext
 from cloudscan.engine.finding import Finding, Severity
+from cloudscan.rules.base import BaseRule
 
 
 class RDSPublicUnencryptedRule(BaseRule):

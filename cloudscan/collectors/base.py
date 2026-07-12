@@ -8,9 +8,10 @@ Each collector follows the same pattern:
 4. NO security logic (that's for rules)
 """
 
-from abc import ABC, abstractmethod
-from typing import Dict, Any, List
 import logging
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List
+
 from cloudscan.aws_client import AWSClient
 
 

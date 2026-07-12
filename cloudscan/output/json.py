@@ -5,8 +5,9 @@ Suitable for CI/CD integration, API endpoints, and data processing.
 """
 
 import json
-from typing import List, Dict, Any
 from datetime import datetime, timezone
+from typing import Any, Dict, List
+
 from cloudscan.engine.finding import Finding
 from cloudscan.output.base import BaseOutputFormatter
 

@@ -58,7 +58,7 @@ class TestJSONLOutputFormatter:
     def test_line_types_in_order(self):
         formatter = JSONLOutputFormatter()
         output = formatter.format([make_finding()])
-        lines = [json.loads(l) for l in output.strip().split("\n")]
+        lines = [json.loads(line) for line in output.strip().split("\n")]
         assert lines[0]["type"] == "scan_start"
         assert lines[1]["type"] == "finding"
         assert lines[2]["type"] == "scan_complete"

@@ -6,10 +6,11 @@ Stage 1 of pentesting: Passive reconnaissance to identify AWS infrastructure.
 
 import logging
 import re
-from typing import Dict, Any, List, Optional, Set
 from dataclasses import dataclass
-import requests
+from typing import List, Optional, Set
 from urllib.parse import urlparse
+
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -207,7 +208,7 @@ class WebsiteScanner:
 
             try:
                 context = ssl.create_default_context()
-                
+
                 # Use socket-based SSL connection
                 import socket
                 with socket.create_connection((hostname, 443), timeout=self.timeout) as sock:
@@ -280,7 +281,7 @@ class WebsiteScanner:
             hostname = parsed.hostname or parsed.netloc
 
             try:
-                answers = dns.resolver.resolve(hostname, 'A')
+                dns.resolver.resolve(hostname, 'A')
                 logger.debug(f"DNS resolution successful for {hostname}")
             except dns.resolver.NXDOMAIN:
                 self.indicators.append(WebsiteIndicator(
@@ -377,7 +378,7 @@ class WebsiteScanner:
                             indicator_type='s3_bucket',
                             severity='INFO',
                             title=f'S3 bucket discovered: {bucket_name}',
-                            description=f'S3 bucket found in website content',
+                            description='S3 bucket found in website content',
                             evidence=f'Bucket name: {bucket_name} (pattern: {pattern_name})',
                             remediation='Verify S3 bucket permissions are properly restricted',
                             aws_service='S3'
@@ -408,7 +409,7 @@ class WebsiteScanner:
                             indicator_type='subdomain',
                             severity='INFO',
                             title=f'Subdomain discovered: {subdomain}.{base_domain}',
-                            description=f'Active subdomain found during enumeration',
+                            description='Active subdomain found during enumeration',
                             evidence=f'HTTP {response.status_code} response from {test_url}',
                             remediation='Review subdomain purpose and ensure it is properly secured'
                         ))

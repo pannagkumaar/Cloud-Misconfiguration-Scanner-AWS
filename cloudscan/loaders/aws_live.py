@@ -6,11 +6,11 @@ Requires AWS credentials.
 """
 
 import logging
-from typing import Dict, Any, Optional, List
-from cloudscan.loaders.base import BaseLoader
+from typing import Any, Dict, List, Optional
+
 from cloudscan.aws_client import AWSClient
 from cloudscan.collectors.manager import CollectorManager
-
+from cloudscan.loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
 
@@ -43,16 +43,16 @@ class AWSLiveLoader(BaseLoader):
             Dictionary with collected configurations
         """
         self.logger.info("Loading configuration from AWS APIs")
-        
+
         try:
             data = self.manager.collect_all(self.services)
-            
+
             if self.validate_structure(data):
                 self.logger.info(f"Successfully loaded {len(data['services'])} services from AWS")
                 return data
             else:
                 raise ValueError("Collected data failed validation")
-                
+
         except Exception as e:
             self.logger.error(f"Failed to load from AWS: {e}")
             raise

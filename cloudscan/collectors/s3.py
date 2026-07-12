@@ -11,10 +11,11 @@ Gathers:
 - Server access logging
 """
 
-from typing import Dict, Any, List
 import json
-import logging
+from typing import Any, Dict, List
+
 from botocore.exceptions import ClientError
+
 from cloudscan.collectors.base import BaseCollector
 
 

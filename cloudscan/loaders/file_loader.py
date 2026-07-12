@@ -5,14 +5,15 @@ Enables offline analysis and pentesting without AWS credentials.
 Perfect for analyzing exported configurations, CloudFormation templates, etc.
 """
 
-import logging
 import json
-import yaml
+import logging
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict
+
+import yaml
+
 from cloudscan.loaders.base import BaseLoader
 from cloudscan.loaders.normalize import normalize_collected_data
-
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +32,10 @@ class FileLoader(BaseLoader):
         """
         super().__init__()
         self.file_path = Path(file_path)
-        
+
         if not self.file_path.exists():
             raise FileNotFoundError(f"Configuration file not found: {file_path}")
-        
+
         if self.file_path.suffix.lower() not in self.SUPPORTED_FORMATS:
             raise ValueError(
                 f"Unsupported format: {self.file_path.suffix}. "
@@ -49,7 +50,7 @@ class FileLoader(BaseLoader):
             Dictionary with configuration data
         """
         self.logger.info(f"Loading configuration from {self.file_path}")
-        
+
         try:
             data = self._load_file()
 
@@ -62,7 +63,7 @@ class FileLoader(BaseLoader):
                 return data
             else:
                 raise ValueError("File data failed validation")
-                
+
         except Exception as e:
             self.logger.error(f"Failed to load from file: {e}")
             raise
@@ -78,7 +79,7 @@ class FileLoader(BaseLoader):
             ValueError: If file format is invalid or parsing fails
         """
         suffix = self.file_path.suffix.lower()
-        
+
         try:
             with open(self.file_path, "r") as f:
                 if suffix == ".json":
@@ -87,7 +88,7 @@ class FileLoader(BaseLoader):
                     return yaml.safe_load(f)
                 else:
                     raise ValueError(f"Unsupported format: {suffix}")
-                    
+
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON in {self.file_path.name}: {e}")
         except yaml.YAMLError as e:

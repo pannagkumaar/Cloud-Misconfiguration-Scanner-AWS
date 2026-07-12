@@ -10,10 +10,11 @@ Gathers:
 - Root account activity
 """
 
-from typing import Dict, Any, List
-import logging
 from datetime import datetime, timezone
+from typing import Any, Dict, List
+
 from botocore.exceptions import ClientError
+
 from cloudscan.collectors.base import BaseCollector
 
 

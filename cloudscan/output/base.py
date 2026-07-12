@@ -6,6 +6,7 @@ Handles different output formats (console, JSON, SARIF).
 
 from abc import ABC, abstractmethod
 from typing import List, Optional
+
 from cloudscan.engine.finding import Finding
 
 

@@ -4,16 +4,15 @@ Rule engine - Orchestrates rule evaluation.
 Loads all rules and evaluates them against the scan context.
 """
 
-import logging
-from typing import List, Dict, Type
-from pathlib import Path
 import importlib
 import inspect
+import logging
+from pathlib import Path
+from typing import List
 
 from cloudscan.engine.context import ScanContext
 from cloudscan.engine.finding import Finding, Severity
 from cloudscan.rules.base import BaseRule
-
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,6 @@
 """Tests for the rule engine: dynamic loading, evaluation, sorting, error isolation."""
 
-from cloudscan.engine.finding import Finding, Severity
+from cloudscan.engine.finding import Severity
 from cloudscan.engine.rule_engine import RuleEngine
 from cloudscan.rules.base import BaseRule
 from tests.conftest import make_context

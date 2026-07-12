@@ -5,13 +5,13 @@ Orchestrates the execution of multiple collectors and aggregates results.
 """
 
 import logging
-from typing import Dict, Any, List, Optional
-from cloudscan.aws_client import AWSClient
-from cloudscan.collectors.iam import IAMCollector
-from cloudscan.collectors.s3 import S3Collector
-from cloudscan.collectors.ec2 import EC2Collector
-from cloudscan.collectors.rds import RDSCollector
+from typing import Any, Dict, List, Optional
 
+from cloudscan.aws_client import AWSClient
+from cloudscan.collectors.ec2 import EC2Collector
+from cloudscan.collectors.iam import IAMCollector
+from cloudscan.collectors.rds import RDSCollector
+from cloudscan.collectors.s3 import S3Collector
 
 logger = logging.getLogger(__name__)
 

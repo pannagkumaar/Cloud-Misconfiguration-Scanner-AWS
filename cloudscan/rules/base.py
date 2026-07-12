@@ -7,9 +7,10 @@ Each rule:
 3. Generates findings with evidence and remediation
 """
 
+import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional
-import logging
+
 from cloudscan.engine.context import ScanContext
 from cloudscan.engine.finding import Finding, Severity
 

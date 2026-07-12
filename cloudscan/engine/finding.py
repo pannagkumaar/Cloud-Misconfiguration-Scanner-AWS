@@ -9,9 +9,9 @@ A finding is the output of a rule evaluation. It includes:
 """
 
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import Dict, Any, Optional
 from datetime import datetime, timezone
+from enum import Enum
+from typing import Any, Dict, Optional
 
 
 class Severity(str, Enum):

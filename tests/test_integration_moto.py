@@ -11,7 +11,6 @@ against actual AWS API response shapes, not just our own fixtures.
 No real AWS account, credentials, or cost involved.
 """
 
-import os
 
 import pytest
 from moto import mock_aws
@@ -26,10 +25,10 @@ from demo.seed_demo_account import (
     OPEN_SG_NAME,
     PUBLIC_BUCKET,
     PUBLIC_DB,
+    REGION,
     RESTRICTED_SG_NAME,
     SECURE_BUCKET,
     SECURE_DB,
-    REGION,
     seed_vulnerable_account,
 )
 

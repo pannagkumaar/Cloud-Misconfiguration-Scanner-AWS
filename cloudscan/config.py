@@ -5,9 +5,10 @@ Handles loading config.yaml and applying environment variable overrides.
 """
 
 import os
-import yaml
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
+import yaml
 
 
 class ScannerConfig:

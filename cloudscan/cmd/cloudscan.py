@@ -4,9 +4,9 @@ CLI entry point for Cloud Misconfiguration Scanner.
 Implements the main command-line interface using Click.
 """
 
-import click
-import logging
 import sys
+
+import click
 
 if __name__ == "__main__":
     # Running as `python cloudscan/cmd/cloudscan.py` (not installed via pip):
@@ -18,18 +18,18 @@ if __name__ == "__main__":
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from cloudscan.config import ScannerConfig
-from cloudscan.logger import setup_logging, get_logger
 from cloudscan.aws_client import AWSClient
+from cloudscan.config import ScannerConfig
+from cloudscan.engine.context import ScanContext
+from cloudscan.engine.finding import Severity
+from cloudscan.engine.rule_engine import RuleEngine
 from cloudscan.loaders.aws_live import AWSLiveLoader
 from cloudscan.loaders.file_loader import FileLoader
-from cloudscan.engine.context import ScanContext
-from cloudscan.engine.rule_engine import RuleEngine
-from cloudscan.engine.finding import Severity
+from cloudscan.logger import get_logger, setup_logging
 from cloudscan.output.console import ConsoleOutputFormatter
-from cloudscan.output.json import JSONOutputFormatter, JSONLOutputFormatter
-from cloudscan.website.scanner import WebsiteScanner
+from cloudscan.output.json import JSONLOutputFormatter, JSONOutputFormatter
 from cloudscan.website.output import WebsiteOutputFormatter
+from cloudscan.website.scanner import WebsiteScanner
 
 logger = get_logger("cli")
 
@@ -166,7 +166,7 @@ def aws_scan(
         else:
             # Live AWS mode
             logger.info("Loading configuration from AWS APIs")
-            
+
             # Load configuration
             config_obj = ScannerConfig(config)
             logger.debug(f"Configuration loaded from {config_obj.config_path}")

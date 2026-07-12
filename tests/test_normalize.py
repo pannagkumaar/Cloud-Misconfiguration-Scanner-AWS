@@ -2,11 +2,11 @@
 
 from cloudscan.loaders.normalize import (
     normalize_cloudtrail,
+    normalize_collected_data,
     normalize_ec2,
     normalize_iam,
     normalize_rds,
     normalize_s3,
-    normalize_collected_data,
 )
 
 

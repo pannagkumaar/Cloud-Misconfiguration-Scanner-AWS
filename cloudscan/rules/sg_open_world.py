@@ -6,9 +6,10 @@ any IP on dangerous ports (SSH 22, RDP 3389).
 """
 
 from typing import List
-from cloudscan.rules.base import BaseRule
+
 from cloudscan.engine.context import ScanContext
 from cloudscan.engine.finding import Finding, Severity
+from cloudscan.rules.base import BaseRule
 
 
 class SecurityGroupOpenRule(BaseRule):
