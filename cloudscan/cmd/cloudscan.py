@@ -7,11 +7,16 @@ Implements the main command-line interface using Click.
 import click
 import logging
 import sys
-import json
-from pathlib import Path
 
-# Add grandparent directory to path for imports (so cloudscan can be imported)
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+if __name__ == "__main__":
+    # Running as `python cloudscan/cmd/cloudscan.py` (not installed via pip):
+    # the interpreter puts this script's own directory first on sys.path,
+    # which shadows the real top-level "cloudscan" package with this file
+    # (same basename). Prepend the project root so the package imports below
+    # resolve correctly. Not needed when installed (`cloudscan` console
+    # script imports this module by its real dotted path instead).
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from cloudscan.config import ScannerConfig
 from cloudscan.logger import setup_logging, get_logger

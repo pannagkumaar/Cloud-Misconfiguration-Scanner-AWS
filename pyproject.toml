@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cloudscan"
+version = "0.1.0"
+description = "Agentless AWS Cloud Security Posture Management (CSPM) CLI"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "pannag kumaar" }]
+keywords = ["aws", "security", "cspm", "cloud-security", "cis-benchmark", "misconfiguration"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+dependencies = [
+    "boto3>=1.26.0",
+    "botocore>=1.29.0",
+    "click>=8.1.0",
+    "pyyaml>=6.0",
+    "colorama>=0.4.6",
+    "requests>=2.28.0",
+    "dnspython>=2.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "moto[all]>=4.2.0",
+    "ruff>=0.1.0",
+    "jsonschema>=4.19.0",
+    "pre-commit>=3.5.0",
+]
+
+[project.scripts]
+cloudscan = "cloudscan.cmd.cloudscan:cli"
+
+[project.urls]
+Repository = "https://github.com/pannagkumaar/Cloud-Misconfiguration-Scanner-AWS"
+
+[tool.setuptools.packages.find]
+include = ["cloudscan*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --strict-markers"
+
+[tool.coverage.run]
+source = ["cloudscan"]
+omit = ["cloudscan/cmd/*"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
