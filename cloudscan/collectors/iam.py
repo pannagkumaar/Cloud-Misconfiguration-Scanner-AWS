@@ -72,6 +72,7 @@ class IAMCollector(BaseCollector):
                         "mfa_devices": [],
                         "access_keys": [],
                         "inline_policies": [],
+                        "inline_policy_documents": [],
                         "attached_policies": [],
                     }
 
@@ -106,12 +107,28 @@ class IAMCollector(BaseCollector):
                     except Exception as e:
                         self.logger.debug(f"Error getting access keys for {user['UserName']}: {e}")
 
-                    # Get inline policies
+                    # Get inline policies (names + actual documents)
                     try:
                         policies_response = iam_client.list_user_policies(
                             UserName=user["UserName"]
                         )
-                        user_data["inline_policies"] = policies_response.get("PolicyNames", [])
+                        policy_names = policies_response.get("PolicyNames", [])
+                        user_data["inline_policies"] = policy_names
+
+                        for policy_name in policy_names:
+                            try:
+                                doc_response = iam_client.get_user_policy(
+                                    UserName=user["UserName"], PolicyName=policy_name
+                                )
+                                user_data["inline_policy_documents"].append({
+                                    "name": policy_name,
+                                    "document": doc_response.get("PolicyDocument", {}),
+                                })
+                            except Exception as e:
+                                self.logger.debug(
+                                    f"Error getting inline policy document "
+                                    f"{policy_name} for {user['UserName']}: {e}"
+                                )
                     except Exception as e:
                         self.logger.debug(f"Error getting inline policies for {user['UserName']}: {e}")
 
@@ -158,15 +175,32 @@ class IAMCollector(BaseCollector):
                         "created": role["CreateDate"].isoformat(),
                         "assume_role_policy": role.get("AssumeRolePolicyDocument", {}),
                         "inline_policies": [],
+                        "inline_policy_documents": [],
                         "attached_policies": [],
                     }
 
-                    # Get inline policies
+                    # Get inline policies (names + actual documents)
                     try:
                         policies_response = iam_client.list_role_policies(
                             RoleName=role["RoleName"]
                         )
-                        role_data["inline_policies"] = policies_response.get("PolicyNames", [])
+                        policy_names = policies_response.get("PolicyNames", [])
+                        role_data["inline_policies"] = policy_names
+
+                        for policy_name in policy_names:
+                            try:
+                                doc_response = iam_client.get_role_policy(
+                                    RoleName=role["RoleName"], PolicyName=policy_name
+                                )
+                                role_data["inline_policy_documents"].append({
+                                    "name": policy_name,
+                                    "document": doc_response.get("PolicyDocument", {}),
+                                })
+                            except Exception as e:
+                                self.logger.debug(
+                                    f"Error getting inline policy document "
+                                    f"{policy_name} for {role['RoleName']}: {e}"
+                                )
                     except Exception as e:
                         self.logger.debug(f"Error getting inline policies for {role['RoleName']}: {e}")
 

@@ -37,12 +37,13 @@ class IAMWildcardPolicyRule(BaseRule):
         """
         findings = []
 
-        # Check user inline policies
+        # Check user inline policies (actual policy documents, not just names)
         for user in context.get_iam_users():
-            for policy_name in user.get("inline_policies", []):
-                if self._has_wildcard_policy(
-                    context, "User", user["name"], policy_name
-                ):
+            for inline in user.get("inline_policy_documents", []):
+                document = inline.get("document", {})
+                for statement in document.get("Statement", []):
+                    if not self._is_wildcard_statement(statement):
+                        continue
                     finding = self._create_finding(
                         resource_id=user["arn"],
                         resource_type="IAM User",
@@ -50,10 +51,10 @@ class IAMWildcardPolicyRule(BaseRule):
                              "account compromise if credentials are leaked",
                         evidence={
                             "user_name": user["name"],
-                            "policy_name": policy_name,
+                            "policy_name": inline.get("name"),
                             "policy_type": "inline",
                         },
-                        remediation=self._get_remediation("user", policy_name),
+                        remediation=self._get_remediation("user", inline.get("name", "")),
                         remediation_url=(
                             "https://docs.aws.amazon.com/IAM/latest/UserGuide/"
                             "access_policies.html"
@@ -63,13 +64,15 @@ class IAMWildcardPolicyRule(BaseRule):
                     self.logger.warning(
                         f"Wildcard policy detected on user: {user['name']}"
                     )
+                    break  # one finding per policy is enough
 
-        # Check role inline policies
+        # Check role inline policies (actual policy documents, not just names)
         for role in context.get_iam_roles():
-            for policy_name in role.get("inline_policies", []):
-                if self._has_wildcard_policy(
-                    context, "Role", role["name"], policy_name
-                ):
+            for inline in role.get("inline_policy_documents", []):
+                document = inline.get("document", {})
+                for statement in document.get("Statement", []):
+                    if not self._is_wildcard_statement(statement):
+                        continue
                     finding = self._create_finding(
                         resource_id=role["arn"],
                         resource_type="IAM Role",
@@ -77,10 +80,10 @@ class IAMWildcardPolicyRule(BaseRule):
                              "account compromise if assumed by compromised service",
                         evidence={
                             "role_name": role["name"],
-                            "policy_name": policy_name,
+                            "policy_name": inline.get("name"),
                             "policy_type": "inline",
                         },
-                        remediation=self._get_remediation("role", policy_name),
+                        remediation=self._get_remediation("role", inline.get("name", "")),
                         remediation_url=(
                             "https://docs.aws.amazon.com/IAM/latest/UserGuide/"
                             "access_policies.html"
@@ -90,6 +93,7 @@ class IAMWildcardPolicyRule(BaseRule):
                     self.logger.warning(
                         f"Wildcard policy detected on role: {role['name']}"
                     )
+                    break  # one finding per policy is enough
 
         # Check customer-managed policies for wildcard statements
         for policy in context.get_iam_policies():
@@ -125,16 +129,6 @@ class IAMWildcardPolicyRule(BaseRule):
                     )
 
         return findings
-
-    def _has_wildcard_policy(
-        self, context: ScanContext, principal_type: str,
-        principal_name: str, policy_name: str
-    ) -> bool:
-        """Check if a user/role inline policy has wildcard permissions."""
-        # NOTE: In a real implementation, we'd fetch the actual policy document
-        # For now, return False as we don't have inline policy contents
-        # This would be populated from IAM.get_user_policy() / get_role_policy()
-        return False
 
     def _is_wildcard_statement(self, statement: Dict[str, Any]) -> bool:
         """
