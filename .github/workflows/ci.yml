@@ -59,3 +59,27 @@ jobs:
           assert data['summary']['critical'] >= 1
           print('Demo produced', data['summary']['total'], 'findings as expected')
           "
+
+  sarif-demo:
+    name: SARIF upload (demo account findings)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      # NOTE: this scans the moto-simulated demo AWS account, not this
+      # repo's own source code -- CloudScan is a CSPM tool, so there's no
+      # "vulnerable line of code" to point at. The Security tab entries
+      # this produces demonstrate the SARIF output pipeline working
+      # end-to-end against GitHub Code Scanning, using the same findings
+      # as the demo smoke test job above.
+      - run: python demo/seed_demo_account.py --output sarif --output-file demo-findings.sarif
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: demo-findings.sarif
+          category: cloudscan-demo-account

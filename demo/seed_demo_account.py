@@ -193,6 +193,9 @@ def _build_formatter(output: str, output_file: str):
         return JSONOutputFormatter(output_file=output_file)
     if output == "jsonl":
         return JSONLOutputFormatter(output_file=output_file)
+    if output == "sarif":
+        from cloudscan.output.sarif import SARIFOutputFormatter
+        return SARIFOutputFormatter(output_file=output_file)
     if output == "html":
         # Imported lazily so `console`/`json` output doesn't require the
         # HTML formatter module to exist.
@@ -209,7 +212,7 @@ def main():
         )
     )
     parser.add_argument(
-        "--output", choices=["console", "json", "jsonl", "html"], default="console",
+        "--output", choices=["console", "json", "jsonl", "sarif", "html"], default="console",
         help="Output format (default: console)",
     )
     parser.add_argument(
