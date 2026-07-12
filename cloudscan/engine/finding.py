@@ -11,7 +11,7 @@ A finding is the output of a rule evaluation. It includes:
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class Severity(str, Enum):
@@ -50,7 +50,9 @@ class Finding:
     remediation_url: str = ""           # Link to AWS docs
 
     # Metadata
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    )
     scan_id: Optional[str] = None       # ID of the scan that found this
 
     def to_dict(self) -> Dict[str, Any]:

@@ -6,9 +6,14 @@ Suitable for CI/CD integration, API endpoints, and data processing.
 
 import json
 from typing import List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 from cloudscan.engine.finding import Finding
 from cloudscan.output.base import BaseOutputFormatter
+
+
+def _now_iso() -> str:
+    """Current UTC time as an ISO8601 string with a 'Z' suffix."""
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 class JSONOutputFormatter(BaseOutputFormatter):
@@ -47,7 +52,7 @@ class JSONOutputFormatter(BaseOutputFormatter):
 
         structure = {
             "scan_metadata": {
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": _now_iso(),
                 "scanner": "Cloud Misconfiguration Scanner",
                 "version": "0.1.0",
             } if self.include_metadata else None,
@@ -86,7 +91,7 @@ class JSONLOutputFormatter(BaseOutputFormatter):
         # Metadata line
         metadata = {
             "type": "scan_start",
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": _now_iso(),
             "total_findings": len(findings),
         }
         lines.append(json.dumps(metadata, default=str))
@@ -103,7 +108,7 @@ class JSONLOutputFormatter(BaseOutputFormatter):
         counts = self._get_severity_count(findings)
         summary = {
             "type": "scan_complete",
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": _now_iso(),
             "summary": {
                 "critical": counts["CRITICAL"],
                 "high": counts["HIGH"],

@@ -5,7 +5,7 @@ Website Scanner Output Formatter - Formats website scan results.
 import logging
 import json
 from typing import List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 try:
     from colorama import Fore, Back, Style
@@ -70,7 +70,7 @@ class WebsiteOutputFormatter:
         output.append("Website Security Scanner - Reconnaissance Report")
         output.append("=" * 80)
         output.append(f"URL: {url}")
-        output.append(f"Timestamp: {datetime.utcnow().isoformat()}Z")
+        output.append(f"Timestamp: {datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')}")
         output.append("")
 
         # AWS Detection Summary
@@ -161,7 +161,7 @@ class WebsiteOutputFormatter:
         data = {
             'scan': {
                 'url': url,
-                'timestamp': datetime.utcnow().isoformat() + 'Z',
+                'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
                 'scanner': 'CloudScan-Website-Scanner',
                 'version': '0.1.0'
             },

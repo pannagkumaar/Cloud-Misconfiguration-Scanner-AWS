@@ -35,6 +35,8 @@ class ScannerConfig:
         with open(self.config_path, 'r') as f:
             self._config = yaml.safe_load(f) or {}
 
+        self._apply_env_overrides()
+
     def _apply_env_overrides(self) -> None:
         """Apply environment variable overrides to config."""
         # AWS overrides
