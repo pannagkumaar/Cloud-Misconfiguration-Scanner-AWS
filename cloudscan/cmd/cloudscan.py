@@ -70,7 +70,7 @@ def cli():
 @click.option(
     "--services",
     multiple=True,
-    type=click.Choice(["iam", "s3", "ec2", "rds"]),
+    type=click.Choice(["iam", "s3", "ec2", "rds", "cloudtrail"]),
     help="Services to scan (default: all)"
 )
 @click.option(
@@ -188,7 +188,7 @@ def aws_scan(
             logger.info(f"Connected to AWS account: {account_id}")
 
             # Create loader for live AWS
-            services_to_collect = list(services) if services else ["iam", "s3", "ec2", "rds"]
+            services_to_collect = list(services) if services else ["iam", "s3", "ec2", "rds", "cloudtrail"]
             loader = AWSLiveLoader(aws_client, services=services_to_collect)
 
         # Load configuration data
@@ -344,7 +344,7 @@ def validate():
 @click.option("--from-file", type=click.Path(exists=True), default=None)
 @click.option("--profile", default="default")
 @click.option("--region", default="us-east-1")
-@click.option("--services", multiple=True, type=click.Choice(["iam", "s3", "ec2", "rds"]))
+@click.option("--services", multiple=True, type=click.Choice(["iam", "s3", "ec2", "rds", "cloudtrail"]))
 @click.option("--severity", multiple=True, type=click.Choice(["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]))
 @click.option("--output", type=click.Choice(["console", "json", "jsonl"]), default="console")
 @click.option("--output-file", type=click.Path(), default=None)

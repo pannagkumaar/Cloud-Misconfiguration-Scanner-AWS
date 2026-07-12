@@ -115,3 +115,11 @@ class TestMotoIntegration:
         findings = _run_full_scan()
         rule_ids = {f.rule_id for f in findings}
         assert {"S3-001", "SG-001", "IAM-001", "RDS-001"}.issubset(rule_ids)
+
+    def test_no_cloudtrail_flagged_critical(self):
+        """The demo account has no CloudTrail trail configured at all --
+        a realistic and common real-world gap."""
+        findings = _run_full_scan()
+        ct001 = [f for f in findings if f.rule_id == "CT-001"]
+        assert len(ct001) == 1
+        assert ct001[0].severity.value == "CRITICAL"

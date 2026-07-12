@@ -32,7 +32,7 @@ class AWSLiveLoader(BaseLoader):
         """
         super().__init__()
         self.aws_client = aws_client
-        self.services = services or ["iam", "s3", "ec2", "rds"]
+        self.services = services or ["iam", "s3", "ec2", "rds", "cloudtrail"]
         self.manager = CollectorManager(aws_client)
 
     def load(self) -> Dict[str, Any]:

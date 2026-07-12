@@ -93,5 +93,9 @@ class ScanContext:
         """Get all RDS clusters."""
         return self.get_service_data("rds").get("clusters", [])
 
+    def get_cloudtrail_trails(self) -> list:
+        """Get all CloudTrail trails."""
+        return self.get_service_data("cloudtrail").get("trails", [])
+
     def __repr__(self) -> str:
         return f"<ScanContext account={self.account_id} region={self.region}>"

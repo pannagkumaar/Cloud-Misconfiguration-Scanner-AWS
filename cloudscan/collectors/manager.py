@@ -8,6 +8,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from cloudscan.aws_client import AWSClient
+from cloudscan.collectors.cloudtrail import CloudTrailCollector
 from cloudscan.collectors.ec2 import EC2Collector
 from cloudscan.collectors.iam import IAMCollector
 from cloudscan.collectors.rds import RDSCollector
@@ -24,6 +25,7 @@ class CollectorManager:
         "s3": S3Collector,
         "ec2": EC2Collector,
         "rds": RDSCollector,
+        "cloudtrail": CloudTrailCollector,
     }
 
     def __init__(self, aws_client: AWSClient):
