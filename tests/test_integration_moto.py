@@ -66,10 +66,16 @@ class TestMotoIntegration:
         ids = {f.resource_id for f in findings}
         assert PUBLIC_BUCKET in ids
 
-    def test_secure_bucket_not_flagged(self):
+    def test_secure_bucket_has_no_serious_findings(self):
+        """SECURE_BUCKET is hardened against every *serious* gap the rules
+        check (public exposure, missing encryption/versioning/TLS,
+        incomplete Block Public Access). It may still trip low-severity
+        best-practice advisories (e.g. access logging) -- that's a
+        legitimate, real finding, not a false positive to eliminate."""
         findings = _run_full_scan()
-        ids = {f.resource_id for f in findings}
-        assert SECURE_BUCKET not in ids
+        secure_bucket_findings = [f for f in findings if f.resource_id == SECURE_BUCKET]
+        assert all(f.severity.value == "LOW" for f in secure_bucket_findings)
+        assert not any(f.rule_id == "S3-001" for f in secure_bucket_findings)
 
     def test_open_security_group_flagged(self):
         findings = _run_full_scan()

@@ -85,6 +85,14 @@ def _seed_s3(aws_client: AWSClient) -> None:
         "Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]
     })
     s3.put_bucket_versioning(Bucket=SECURE_BUCKET, VersioningConfiguration={"Status": "Enabled"})
+    s3.put_bucket_policy(Bucket=SECURE_BUCKET, Policy=json.dumps({
+        "Version": "2012-10-17",
+        "Statement": [{
+            "Effect": "Deny", "Principal": "*", "Action": "s3:*",
+            "Resource": [f"arn:aws:s3:::{SECURE_BUCKET}", f"arn:aws:s3:::{SECURE_BUCKET}/*"],
+            "Condition": {"Bool": {"aws:SecureTransport": "false"}},
+        }],
+    }))
 
 
 def _seed_ec2(aws_client: AWSClient) -> None:
