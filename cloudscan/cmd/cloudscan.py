@@ -76,7 +76,7 @@ def cli():
 )
 @click.option(
     "--output",
-    type=click.Choice(["console", "json", "sarif"]),
+    type=click.Choice(["console", "json", "jsonl"]),
     default="console",
     help="Output format (default: console)"
 )
@@ -333,15 +333,15 @@ def validate():
         sys.exit(1)
 
 
-# Alias for backward compatibility
-@cli.command(name="scan")
+# Alias for backward compatibility (hidden from --help; use aws-scan)
+@cli.command(name="scan", hidden=True)
 @click.option("--config", type=click.Path(exists=True), default=None)
 @click.option("--from-file", type=click.Path(exists=True), default=None)
 @click.option("--profile", default="default")
 @click.option("--region", default="us-east-1")
 @click.option("--services", multiple=True, type=click.Choice(["iam", "s3", "ec2", "rds"]))
 @click.option("--severity", multiple=True, type=click.Choice(["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]))
-@click.option("--output", type=click.Choice(["console", "json", "sarif"]), default="console")
+@click.option("--output", type=click.Choice(["console", "json", "jsonl"]), default="console")
 @click.option("--output-file", type=click.Path(), default=None)
 @click.option("--log-level", type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR"]), default="INFO")
 @click.option("--fail-on", type=click.Choice(["CRITICAL", "HIGH", "MEDIUM", "LOW"]), default=None)
