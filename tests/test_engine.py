@@ -19,6 +19,23 @@ class TestRuleEngineLoading:
         # BaseRule itself should never be instantiated as a "rule"
         assert all(rule.id != "RULE-000" for rule in engine.rules)
 
+    def test_load_rules_produces_no_duplicate_ids(self):
+        """Every rule must be loaded exactly once. Regression test for a
+        real bug: cloudscan/rules/sg_any_port_open.py imported
+        SecurityGroupOpenRule from sg_open_world.py to reuse a constant.
+        Because that import is resolved through Python's normal import
+        machinery (sg_open_world is a real installed module, independent
+        of the engine's own ad-hoc file loader), the imported class showed
+        up in sg_any_port_open's namespace too -- and since
+        inspect.getmembers() doesn't distinguish "defined here" from
+        "merely imported here", the loader instantiated SG-001 a second
+        time while loading sg_any_port_open.py. Fixed by checking
+        obj.__module__ == module.__name__ before instantiating."""
+        engine = RuleEngine()
+        engine.load_rules()
+        ids = [rule.id for rule in engine.rules]
+        assert len(ids) == len(set(ids)), f"duplicate rule ids: {ids}"
+
 
 class _AlwaysFindsRule(BaseRule):
     id = "TEST-001"
