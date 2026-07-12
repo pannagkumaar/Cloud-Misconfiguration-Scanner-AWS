@@ -32,6 +32,7 @@ from cloudscan.loaders.aws_live import AWSLiveLoader
 from cloudscan.loaders.file_loader import FileLoader
 from cloudscan.logger import get_logger, setup_logging
 from cloudscan.output.console import ConsoleOutputFormatter
+from cloudscan.output.html import HTMLOutputFormatter
 from cloudscan.output.json import JSONLOutputFormatter, JSONOutputFormatter
 from cloudscan.output.sarif import SARIFOutputFormatter
 from cloudscan.website.output import WebsiteOutputFormatter
@@ -87,7 +88,7 @@ def cli():
 )
 @click.option(
     "--output",
-    type=click.Choice(["console", "json", "jsonl", "sarif"]),
+    type=click.Choice(["console", "json", "jsonl", "sarif", "html"]),
     default="console",
     help="Output format (default: console)"
 )
@@ -237,6 +238,8 @@ def aws_scan(
             formatter = JSONLOutputFormatter(output_file=output_file)
         elif output == "sarif":
             formatter = SARIFOutputFormatter(output_file=output_file)
+        elif output == "html":
+            formatter = HTMLOutputFormatter(output_file=output_file)
         else:  # console
             formatter = ConsoleOutputFormatter(output_file=output_file)
 
@@ -373,7 +376,7 @@ def validate():
 @click.option("--region", default="us-east-1")
 @click.option("--services", multiple=True, type=click.Choice(["iam", "s3", "ec2", "rds", "cloudtrail"]))
 @click.option("--severity", multiple=True, type=click.Choice(["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]))
-@click.option("--output", type=click.Choice(["console", "json", "jsonl", "sarif"]), default="console")
+@click.option("--output", type=click.Choice(["console", "json", "jsonl", "sarif", "html"]), default="console")
 @click.option("--output-file", type=click.Path(), default=None)
 @click.option("--log-level", type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR"]), default="INFO")
 @click.option("--fail-on", type=click.Choice(["CRITICAL", "HIGH", "MEDIUM", "LOW"]), default=None)
