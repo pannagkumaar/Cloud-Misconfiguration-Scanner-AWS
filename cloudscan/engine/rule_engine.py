@@ -64,11 +64,17 @@ class RuleEngine:
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
 
-                # Find rule classes
+                # Find rule classes actually defined in this module -- not
+                # merely imported into its namespace (e.g. a rule file
+                # importing a constant or helper from another rule file
+                # would otherwise cause that other file's rule class to be
+                # instantiated a second time, since inspect.getmembers()
+                # sees imported names too).
                 for name, obj in inspect.getmembers(module):
                     if (inspect.isclass(obj) and
                         issubclass(obj, BaseRule) and
-                        obj is not BaseRule):
+                        obj is not BaseRule and
+                        obj.__module__ == module.__name__):
                         rule_instance = obj()
                         self.rules.append(rule_instance)
                         self.logger.debug(f"Loaded rule: {rule_instance.id}")
