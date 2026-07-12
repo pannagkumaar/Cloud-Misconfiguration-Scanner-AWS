@@ -1,5 +1,7 @@
 # Cloud Misconfiguration Scanner for AWS 
 
+[![CI](https://github.com/pannagkumaar/Cloud-Misconfiguration-Scanner-AWS/actions/workflows/ci.yml/badge.svg)](https://github.com/pannagkumaar/Cloud-Misconfiguration-Scanner-AWS/actions/workflows/ci.yml)
+
 :: Python / AWS / Boto3 / Requests / Click / JSON / YAML / CLI / Security / Regex / REST APIs ::
 
 A production-style security scanner that detects real AWS misconfigurations with clear risk, evidence, and remediation guidance.
