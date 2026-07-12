@@ -94,6 +94,7 @@ class RDSCollector(BaseCollector):
                             ],
                             "db_subnet_group": instance.get("DBSubnetGroup", {}).get("DBSubnetGroupName"),
                         },
+                        "auto_minor_version_upgrade": instance.get("AutoMinorVersionUpgrade"),
                         "tags": {
                             tag["Key"]: tag["Value"]
                             for tag in instance.get("TagList", [])
