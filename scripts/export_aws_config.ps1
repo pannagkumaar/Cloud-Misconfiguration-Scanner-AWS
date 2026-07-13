@@ -15,7 +15,7 @@ Write-Host "   Output: $OutputFile"
 Write-Host ""
 
 $data = @{
-    services = @("iam", "s3", "ec2", "rds")
+    services = @("iam", "s3", "ec2", "rds", "cloudtrail")
     data = @{}
 }
 
@@ -66,6 +66,27 @@ try {
     $data.data.rds = @{}
 }
 
+# Export CloudTrail. describe-trails doesn't report whether a trail is
+# actively logging -- that's a separate per-trail call (get-trail-status),
+# so merge it in or CT-005 will never be able to tell an active trail from
+# a stopped one.
+try {
+    Write-Host "📦 Exporting CloudTrail..." -ForegroundColor Yellow
+    $trails = (aws cloudtrail describe-trails --region $Region --profile $Profile | ConvertFrom-Json).trailList
+    foreach ($trail in $trails) {
+        try {
+            $status = aws cloudtrail get-trail-status --name $trail.Name --region $Region --profile $Profile | ConvertFrom-Json
+            $trail | Add-Member -NotePropertyName IsLogging -NotePropertyValue ([bool]$status.IsLogging) -Force
+        } catch {
+            $trail | Add-Member -NotePropertyName IsLogging -NotePropertyValue $false -Force
+        }
+    }
+    $data.data.cloudtrail = @{ trailList = $trails }
+} catch {
+    Write-Host "⚠️  CloudTrail export failed: $_" -ForegroundColor Red
+    $data.data.cloudtrail = @{}
+}
+
 # Write output
 $data | ConvertTo-Json -Depth 10 | Out-File -FilePath $OutputFile -Encoding UTF8
 
@@ -73,4 +94,4 @@ Write-Host ""
 Write-Host "✅ Export complete: $OutputFile" -ForegroundColor Green
 Write-Host ""
 Write-Host "📊 Usage for pentesting (no credentials needed):" -ForegroundColor Cyan
-Write-Host "   python cloudscan/cmd/cloudscan.py scan --from-file $OutputFile"
+Write-Host "   cloudscan aws-scan --from-file $OutputFile"

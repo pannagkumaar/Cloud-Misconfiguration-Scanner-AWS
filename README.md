@@ -236,6 +236,16 @@ snapshot matching the contract in `cloudscan/schema.py`. See
 `cloudscan/loaders/normalize.py` for the adapter that converts a raw export
 into the normalized shape rules actually evaluate against.
 
+To produce a real export from an account you have (or temporarily had)
+credentials for, `scripts/export_aws_config.sh` / `.ps1` call the AWS CLI
+across iam/s3/ec2/rds/cloudtrail and write a raw export in the shape
+`normalize.py` expects:
+
+```bash
+./scripts/export_aws_config.sh aws-config.json us-east-1 myprofile
+cloudscan aws-scan --from-file aws-config.json
+```
+
 ## Required IAM policy
 
 Read-only. No `iam:GenerateCredentialReport` write concerns — it's an

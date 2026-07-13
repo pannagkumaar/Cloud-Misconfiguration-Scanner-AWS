@@ -147,7 +147,7 @@ class WebsiteOutputFormatter:
         if aws_services:
             output.append("Next Steps:")
             output.append("  1. If you have AWS credentials, export the configuration:")
-            output.append("     ./scripts/export_aws_config.sh --profile <profile> > aws-config.json")
+            output.append("     ./scripts/export_aws_config.sh aws-config.json <region> <profile>")
             output.append("  2. Run AWS Scanner for deep analysis:")
             output.append("     cloudscan aws-scan --from-file aws-config.json")
 
