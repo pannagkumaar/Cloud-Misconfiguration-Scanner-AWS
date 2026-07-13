@@ -55,14 +55,6 @@ class ScannerConfig:
         """Get AWS configuration."""
         return self._config.get("aws", {})
 
-    def get_scanner_config(self) -> Dict[str, Any]:
-        """Get scanner configuration."""
-        return self._config.get("scanner", {})
-
-    def get_output_config(self) -> Dict[str, Any]:
-        """Get output configuration."""
-        return self._config.get("output", {})
-
     def get(self, key: str, default: Any = None) -> Any:
         """Get configuration value by key path (e.g., 'aws.region')."""
         keys = key.split(".")

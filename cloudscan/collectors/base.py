@@ -10,7 +10,7 @@ Each collector follows the same pattern:
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from cloudscan.aws_client import AWSClient
 
@@ -45,28 +45,6 @@ class BaseCollector(ABC):
             Dictionary with raw AWS configuration
         """
         pass
-
-    def _handle_paginator(self, paginator, operation_params: Dict[str, Any]) -> List[Dict]:
-        """
-        Safely handle AWS API pagination.
-
-        Args:
-            paginator: boto3 paginator object
-            operation_params: Parameters to pass to paginator
-
-        Returns:
-            List of all results across pages
-        """
-        results = []
-        try:
-            for page in paginator.paginate(**operation_params):
-                results.extend(page)
-            self.logger.debug(f"Collected {len(results)} results")
-            return results
-
-        except Exception as e:
-            self.logger.error(f"Error during pagination: {e}")
-            raise
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}>"
