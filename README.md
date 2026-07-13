@@ -1,299 +1,245 @@
-# Cloud Misconfiguration Scanner for AWS
+# CloudScan
 
 [![CI](https://github.com/pannagkumaar/Cloud-Misconfiguration-Scanner-AWS/actions/workflows/ci.yml/badge.svg)](https://github.com/pannagkumaar/Cloud-Misconfiguration-Scanner-AWS/actions/workflows/ci.yml)
 
-:: Python / AWS / Boto3 / Requests / Click / JSON / YAML / CLI / Security / Regex / REST APIs ::
+:: Python / boto3 / Click / SARIF / CIS Benchmark / moto / pytest ::
 
-A production-style security scanner that detects real AWS misconfigurations with clear risk, evidence, and remediation guidance.
+An agentless AWS Cloud Security Posture Management (CSPM) CLI. CloudScan reads AWS
+resource configuration (live, via read-only IAM, or offline from an exported JSON
+snapshot) and evaluates it against 31 security rules spanning IAM, S3, EC2/VPC, RDS,
+and CloudTrail — each finding comes with evidence, a remediation, and (where
+applicable) a CIS AWS Foundations Benchmark control reference.
 
-## Quick Start
+## Why this exists
 
-### Prerequisites
-- Python 3.8+
-- AWS account with read-only IAM role (optional - see offline mode below)
-- AWS credentials configured (via `~/.aws/credentials` or environment variables) - ONLY needed for live scanning
+Most "misconfiguration scanner" toy projects hardcode four rules and call it done.
+CloudScan is built the way a real CSPM tool is structured: a normalized data
+contract between collection and evaluation, rules that are independently unit
+tested against that contract, moto-backed integration tests that catch real
+boto3 API bugs (not just logic bugs), CI that runs the full suite plus a
+self-seeded demo account, and output formats that integrate with actual
+tooling — SARIF for GitHub Code Scanning, a self-contained HTML report for
+sharing with people who don't want a JSON blob.
 
-### Installation
+## Quick start
+
+### Install
 
 ```bash
-# Clone the repo
-git clone <repo-url>
+git clone https://github.com/pannagkumaar/Cloud-Misconfiguration-Scanner-AWS.git
 cd Cloud-Misconfiguration-Scanner-AWS
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
+pip install -e .            # installs the `cloudscan` command
+pip install -e ".[dev]"     # + pytest, ruff, moto, pre-commit (for development)
 ```
 
-## Architecture Overview
+### Try it without an AWS account
 
-```
-AWS Account (read-only IAM)
-    ↓
-CLI Entry Point (Click)
-    ↓
-Configuration Loader (config.yaml)
-    ↓
-Service Collectors (boto3)
-    ├─ IAM Collector
-    ├─ S3 Collector
-    ├─ EC2 Collector
-    └─ RDS Collector
-    ↓
-Rule Engine
-    ├─ CIS Benchmark Rules
-    ├─ Security Best Practices
-    └─ Compliance Rules
-    ↓
-Finding Generator
-    ├─ Resource ID
-    ├─ Risk Description
-    ├─ Evidence
-    └─ Remediation
-    ↓
-Output Formatter
-    ├─ Console (Pretty Terminal)
-    ├─ JSON (CI/CD)
-    └─ SARIF (GitHub)
-```
-
-## Design Principles
-
-**Separation of Concerns**
-- Collectors gather raw AWS data independently
-- Rules implement security logic separately
-- Engine orchestrates the flow
-- Formatters handle output generation
-
-**Extensibility**
-- Add new AWS services without modifying rules
-- Add new rules without modifying collectors
-- Multiple output formats (Console, JSON, SARIF)
-
-**Security First**
-- Read-only IAM role (no modifications)
-- No credential storage
-- Uses boto3 credential chain
-- Output sanitization for logs
-
-
-
-## Example Output
-
-### Console Output (Human-Friendly)
-
-```
-[CRITICAL] CIS-1.1 - Root account MFA disabled
-           Resource: AWS Account (123456789)
-           Risk: Root account compromise enables account takeover
-           Evidence: Root user has no MFA virtual device attached
-           Remediation: Enable MFA on root account
-                        https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa_enable_virtual.html
-
-[HIGH] S3-001 - Public bucket detected
-       Resource: prod-logs-bucket
-       Risk: Public data exposure and exfiltration
-       Evidence: Bucket policy allows Principal: * with s3:GetObject
-       Remediation: Enable Block Public Access and use bucket policies to restrict access
-
-[HIGH] SG-001 - Security group open to 0.0.0.0/0 on SSH (22)
-       Resource: sg-12345678 (web-tier)
-       Risk: Unauthorized SSH access from internet
-       Evidence: Inbound rule allows 22/tcp from 0.0.0.0/0
-       Remediation: Restrict SSH access to specific IPs or use Systems Manager Session Manager
-
-Summary:
-  Critical: 1
-  High: 2
-  Medium: 0
-  Low: 0
-  Total: 3
-```
-
-### JSON Output (Machine-Friendly)
-
-```json
-{
-  "scan_id": "scan-20260130-001",
-  "timestamp": "2026-01-30T10:45:22Z",
-  "account_id": "123456789",
-  "region": "us-east-1",
-  "findings": [
-    {
-      "id": "CIS-1.1",
-      "severity": "CRITICAL",
-      "service": "iam",
-      "resource": "AWS Account",
-      "risk": "Root account compromise enables account takeover",
-      "evidence": {
-        "user": "root",
-        "mfa_devices": []
-      },
-      "remediation": "Enable MFA on root account via AWS Management Console"
-    }
-  ],
-  "summary": {
-    "total": 3,
-    "critical": 1,
-    "high": 2,
-    "medium": 0,
-    "low": 0
-  }
-}
-```
-
-## Security Rules
-
-### CIS AWS Foundations Benchmark
-
-- **CIS 1.1** - Root account MFA enabled
-- **CIS 2.1.1** - CloudTrail enabled
-- **CIS 2.1.5** - CloudTrail log validation
-
-### S3 Security
-
-- **S3-001** - Public bucket detection
-- **S3-002** - Bucket encryption (default)
-- **S3-003** - Bucket versioning disabled
-
-### EC2 Security
-
-- **SG-001** - Open security group (0.0.0.0/0)
-- **SG-002** - Unrestricted RDP (3389)
-- **EC2-001** - Instance public IP exposure
-
-### IAM Security
-
-- **IAM-001** - Wildcard policy (*:*)
-- **IAM-002** - Unused access keys (90+ days)
-- **IAM-003** - Root account usage in last 30 days
-
-### RDS Security
-
-- **RDS-001** - Public instance without encryption
-- **RDS-002** - Backup retention < 7 days
-- **RDS-003** - No deletion protection
-
-## Configuration
-
-Edit [config.yaml](config.yaml):
-
-```yaml
-aws:
-  region: us-east-1
-  profile: default
-
-scanner:
-  services: [iam, s3, ec2, rds]
-  severity_levels: [CRITICAL, HIGH, MEDIUM]
-
-output:
-  format: console  # console, json, sarif
-  file: findings.json
-```
-
-## Usage
-
-### Website Scanning
+CloudScan ships a demo that seeds an in-memory mock AWS account (via
+[moto](https://github.com/getmoto/moto), no network calls, no real credentials)
+with a deliberately vulnerable mix of resources, then scans it:
 
 ```bash
-# Scan a website for AWS misconfigurations
-python cloudscan/cmd/cloudscan.py website-scan https://example.com
-
-# Save findings to file
-python cloudscan/cmd/cloudscan.py website-scan https://example.com --output-file findings.txt
-
-# JSON output
-python cloudscan/cmd/cloudscan.py website-scan https://example.com --output json
+make demo              # console output
+make demo-html         # writes report.html — open it in a browser
 ```
 
-**Checks:**
-- Security headers (HSTS, CSP, X-Frame-Options, etc.)
-- SSL/TLS certificate validity
-- AWS infrastructure detection (S3, CloudFront, RDS, etc.)
-- Error page information disclosure
-- Exposed credentials (AWS keys, tokens)
-- Subdomain enumeration
-
-### AWS Scanning
+or directly:
 
 ```bash
-# Scan with default credentials
-python cloudscan/cmd/cloudscan.py aws-scan
-
-# Specify AWS profile
-python cloudscan/cmd/cloudscan.py aws-scan --profile prod
-
-# Filter by severity
-python cloudscan/cmd/cloudscan.py aws-scan --severity HIGH CRITICAL
-
-# Scan specific services
-python cloudscan/cmd/cloudscan.py aws-scan --services iam s3
-
-# Output to JSON
-python cloudscan/cmd/cloudscan.py aws-scan --output json > findings.json
+python demo/seed_demo_account.py --output html --output-file report.html
 ```
 
-### Offline Scanning
+### Scan a real account (read-only)
 
 ```bash
-# Export AWS config from account with access
-./scripts/export_aws_config.sh > aws-export.json
-
-# Scan it offline
-python cloudscan/cmd/cloudscan.py aws-scan --from-file aws-export.json
-
-# JSON output
-python cloudscan/cmd/cloudscan.py aws-scan --from-file aws-export.json --output json
+cloudscan aws-scan --profile myprofile --region us-east-1
 ```
 
-### Advanced Options
+This only calls read (`Describe*`/`Get*`/`List*`) APIs — see
+[Required IAM policy](#required-iam-policy) below for the exact permission set.
+
+### Scan an offline export (no AWS access needed)
 
 ```bash
-# Fail if any CRITICAL findings (for CI/CD)
-python cloudscan/cmd/cloudscan.py aws-scan --fail-on CRITICAL
-
-# Set log level for debugging
-python cloudscan/cmd/cloudscan.py aws-scan --log-level DEBUG
-
-# Combine options
-python cloudscan/cmd/cloudscan.py aws-scan --from-file config.json --severity HIGH CRITICAL --output json --output-file findings.json
+cloudscan aws-scan --from-file examples/sample-aws-config.json
 ```
 
-## Design
+Useful for pentest engagements or reviewing a config someone handed you, without
+ever touching their credentials.
 
-**Separation of Concerns**
-Collectors gather raw AWS data independently, rules implement security logic separately. This mirrors production tools like AWS Security Hub.
+## What it checks
 
-**Read-Only Design**
-The scanner performs read-only assessment. No modifications or auto-fixes are applied, ensuring safe and auditable scanning.
+31 rules across 5 services. Every rule has a stable ID, a severity, and (where
+one exists) a CIS AWS Foundations Benchmark v1.4/1.5 control reference.
 
-**CLI-Based**
-Command-line interface integrates with CI/CD pipelines and automation workflows. JSON output enables programmatic integration.
+### IAM (9 rules)
 
-## Testing
+| ID | Severity | Check | CIS |
+|----|----------|-------|-----|
+| IAM-001 | CRITICAL | Policy grants full administrative access (`*:*`) | 1.18 |
+| IAM-002 | CRITICAL | Root account has no MFA | 1.5 |
+| IAM-003 | CRITICAL | Root account has an active access key | 1.4 |
+| IAM-004 | HIGH | IAM user has console access without MFA | 1.10 |
+| IAM-005 | MEDIUM | Access key not rotated in 90+ days | 1.14 |
+| IAM-006 | MEDIUM | Credential unused for 90+ days | 1.12 |
+| IAM-007 | MEDIUM | Account password policy is weak or missing | 1.8 |
+| IAM-008 | MEDIUM | Policy grants overly broad permissions | — |
+| IAM-009 | LOW | Policy attached directly to a user (not a group/role) | 1.15 |
+
+### S3 (6 rules)
+
+| ID | Severity | Check | CIS |
+|----|----------|-------|-----|
+| S3-001 | HIGH | Bucket is publicly accessible | 2.1.5.1 |
+| S3-002 | MEDIUM | Default encryption not enabled | 2.1.1 |
+| S3-003 | LOW | Versioning disabled | — |
+| S3-004 | LOW | Access logging disabled | — |
+| S3-005 | MEDIUM | Block Public Access not fully enabled | 2.1.5.1 |
+| S3-006 | MEDIUM | Bucket policy does not enforce TLS | — |
+
+### EC2 / VPC (6 rules)
+
+| ID | Severity | Check | CIS |
+|----|----------|-------|-----|
+| SG-001 | HIGH | Security group open to 0.0.0.0/0 on SSH/RDP | — |
+| SG-002 | MEDIUM | Security group open to 0.0.0.0/0 on another port | — |
+| SG-003 | HIGH | Security group open to ::/0 (IPv6) on SSH/RDP | — |
+| SG-004 | LOW | Default security group allows traffic | 5.3 |
+| EC2-001 | HIGH | Instance has a public IP behind an open security group | — |
+| EC2-002 | MEDIUM | Instance does not enforce IMDSv2 | — |
+
+### RDS (5 rules)
+
+| ID | Severity | Check | CIS |
+|----|----------|-------|-----|
+| RDS-001 | CRITICAL | Publicly accessible AND unencrypted | — |
+| RDS-004 | MEDIUM | Backup retention period too short | — |
+| RDS-005 | MEDIUM | Deletion protection not enabled | — |
+| RDS-006 | LOW | Not configured for Multi-AZ | — |
+| RDS-007 | LOW | Auto minor version upgrade disabled | — |
+
+### CloudTrail (5 rules)
+
+| ID | Severity | Check | CIS |
+|----|----------|-------|-----|
+| CT-001 | CRITICAL | No CloudTrail trail exists in the account | 3.1 |
+| CT-002 | HIGH | No trail is multi-region | 3.1 |
+| CT-003 | MEDIUM | Log file validation disabled | 3.2 |
+| CT-004 | MEDIUM | Trail not encrypted with KMS | 3.7 |
+| CT-005 | HIGH | Trail exists but is not actively logging | — |
+
+Filter to just the CIS-mapped subset and get a coverage summary:
 
 ```bash
-pytest tests/
+cloudscan aws-scan --from-file examples/sample-aws-config.json --framework cis
 ```
 
+## Risk scoring
 
-## Security Considerations
+Every finding gets a 0–100 score (`--output json`/`jsonl` includes it, console
+and HTML use it to order results). The score exists to prioritize *within* a
+severity tier — two HIGH findings aren't equally urgent — not to replace
+severity: a base score per tier is boosted for rules that specifically
+indicate internet/public exposure (e.g. a public S3 bucket or a security group
+open to the world), capped so a boosted lower tier can never outrank an
+unboosted higher tier. See `cloudscan/engine/scoring.py`.
 
-### Credential Management
-- ✅ Uses boto3 credential chain (no hardcoded credentials)
-- ✅ Supports AWS STS temporary credentials
-- ✅ Read-only IAM role recommended
+## Output formats
 
-### Data Handling
-- ✅ No credential storage in findings
-- ✅ Output sanitization for logs
-- ✅ No PII in console output by default
+```bash
+cloudscan aws-scan --from-file examples/sample-aws-config.json --output console   # default, human-readable
+cloudscan aws-scan --from-file examples/sample-aws-config.json --output json      # single JSON document
+cloudscan aws-scan --from-file examples/sample-aws-config.json --output jsonl     # one finding per line, for streaming/CI
+cloudscan aws-scan --from-file examples/sample-aws-config.json --output sarif     # SARIF 2.1.0, for GitHub Code Scanning
+cloudscan aws-scan --from-file examples/sample-aws-config.json --output html --output-file report.html   # self-contained report
+```
 
-### Required IAM Policy
+The CI workflow (`.github/workflows/ci.yml`) runs the demo account through
+`--output sarif` and uploads it via `github/codeql-action/upload-sarif`, so
+findings from the seeded demo account show up in this repo's Security tab —
+a working example of wiring CSPM output into GitHub's native tooling.
+
+## CLI reference
+
+```
+$ cloudscan --help
+Usage: cloudscan [OPTIONS] COMMAND [ARGS]...
+
+  Cloud Misconfiguration Scanner for AWS.
+
+  Detect security misconfigurations with clear risk, evidence, and
+  remediation.
+
+Options:
+  --version  Show the version and exit.
+  --help     Show this message and exit.
+
+Commands:
+  aws-scan      Scan for security misconfigurations.
+  validate      Validate AWS credentials and configuration.
+  version       Show version information.
+  website-scan  Scan website for AWS misconfigurations (Stage 1 of...
+```
+
+```
+$ cloudscan aws-scan --help
+Usage: cloudscan aws-scan [OPTIONS]
+
+  Scan for security misconfigurations.
+
+  Supports two modes:
+  1. LIVE MODE (requires AWS credentials):
+       cloudscan aws-scan --profile myprofile --region us-east-1
+  2. OFFLINE MODE (no credentials needed):
+       cloudscan aws-scan --from-file exported-config.json
+
+Options:
+  --config PATH                    Path to config.yaml
+  --from-file PATH                 Load configuration from JSON/YAML file
+                                    (offline mode, no AWS credentials needed)
+  --profile TEXT                   AWS profile to use (default: default, only
+                                    used without --from-file)
+  --region TEXT                    AWS region to scan (default: us-east-1,
+                                    only used without --from-file)
+  --services [iam|s3|ec2|rds|cloudtrail]
+                                    Services to scan (default: all)
+  --severity [CRITICAL|HIGH|MEDIUM|LOW|INFO]
+                                    Severity levels to include (default: all)
+  --output [console|json|jsonl|sarif|html]
+                                    Output format (default: console)
+  --output-file PATH                Write findings to file instead of stdout
+  --log-level [DEBUG|INFO|WARNING|ERROR]
+                                    Logging level (default: INFO)
+  --fail-on [CRITICAL|HIGH|MEDIUM|LOW]
+                                    Exit with code 1 if findings at this
+                                    severity or higher are found
+  --framework [cis]                Filter findings to a compliance framework
+                                    and print a coverage summary
+  --help                            Show this message and exit.
+```
+
+There's also `cloudscan website-scan <url>` — a lightweight, unauthenticated
+recon module that checks a public website's headers/TLS/error pages for
+signs of AWS infrastructure. It's a secondary, opportunistic module (useful
+as a first step when you don't have AWS credentials yet); the actual security
+analysis is `aws-scan`. See [WEBSITE_SCANNER.md](WEBSITE_SCANNER.md).
+
+## Offline mode: exporting a config to scan
+
+Offline mode reads either a raw AWS API export (e.g. from
+`aws iam list-users`-style calls, envelope-wrapped) or a pre-normalized
+snapshot matching the contract in `cloudscan/schema.py`. See
+`examples/sample-aws-config.json` for a worked example, and
+`cloudscan/loaders/normalize.py` for the adapter that converts a raw export
+into the normalized shape rules actually evaluate against.
+
+## Required IAM policy
+
+Read-only. No `iam:GenerateCredentialReport` write concerns — it's an
+async report-generation call but doesn't modify account state.
 
 ```json
 {
@@ -304,14 +250,66 @@ pytest tests/
       "Action": [
         "iam:Get*",
         "iam:List*",
+        "iam:GenerateCredentialReport",
         "s3:Get*",
         "s3:List*",
         "ec2:Describe*",
         "rds:Describe*",
+        "cloudtrail:Describe*",
+        "cloudtrail:Get*",
+        "cloudtrail:List*",
         "sts:GetCallerIdentity"
       ],
       "Resource": "*"
     }
   ]
 }
+```
+
+## Architecture
+
+```
+Collectors (boto3, live) ──┐
+                            ├──> normalize.py ──> ScanContext ──> RuleEngine ──> scoring ──> OutputFormatter
+FileLoader (offline JSON) ─┘         (schema.py contract)      (31 rules)     (0-100)     (console/json/jsonl/sarif/html)
+```
+
+Collectors and the file loader both funnel through the same normalization
+step (`cloudscan/loaders/normalize.py`), so every rule evaluates against one
+documented data contract (`cloudscan/schema.py`) regardless of whether the
+data came from a live API call or an offline export. Full details in
+[ARCHITECTURE.md](ARCHITECTURE.md).
+
+## Development
+
+```bash
+make dev              # install with dev extras
+make test             # pytest with coverage (261 tests)
+make lint             # ruff check
+```
+
+Tests are organized by layer: unit tests for each rule (`tests/test_rules_*.py`)
+against hand-built fixtures, collector tests against `moto`-mocked AWS
+(`tests/test_collectors_*.py`), formatter tests that validate real output
+(SARIF against the official OASIS JSON schema, HTML for balanced tags), and
+an end-to-end integration test (`tests/test_integration_moto.py`) that seeds
+a mock account and asserts on the findings that come out the other end.
+
+## Project layout
+
+```
+cloudscan/
+├── cmd/cloudscan.py         # Click CLI entry point
+├── collectors/               # boto3 collectors: iam, s3, ec2, rds, cloudtrail
+├── loaders/                  # file_loader (offline JSON) + normalize (schema adapter)
+├── engine/                   # ScanContext, RuleEngine, Finding, scoring
+├── rules/                    # 31 rule classes, one file each
+├── compliance/                # CIS control mapping + coverage reporting
+├── output/                   # console, json, sarif, html formatters
+├── website/                   # secondary website-recon module
+└── schema.py                  # normalized data contract (the thing everything agrees on)
+
+demo/seed_demo_account.py     # moto-seeded vulnerable account + scan runner
+examples/sample-aws-config.json
+tests/                        # 261 tests
 ```
