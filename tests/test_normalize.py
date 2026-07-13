@@ -142,7 +142,7 @@ class TestNormalizeRDS:
                        "copy_tags_to_snapshot": False, "deletion_protection": True},
             "network": {"vpc_id": None, "vpc_security_groups": [], "db_subnet_group": None},
             "auto_minor_version_upgrade": True, "tags": {},
-        }], "clusters": []}
+        }]}
         result = normalize_rds(already)
         assert result["instances"] == already["instances"]
 

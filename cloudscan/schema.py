@@ -187,7 +187,6 @@ RDS
         },
         ...
     ],
-    "clusters": [ ...similar shape... ],
 }
 
 --------------------------------------------------------------------------
@@ -219,7 +218,7 @@ IAM_SHAPE = {
 }
 S3_SHAPE = {"buckets"}
 EC2_SHAPE = {"security_groups", "instances"}
-RDS_SHAPE = {"instances", "clusters"}
+RDS_SHAPE = {"instances"}
 CLOUDTRAIL_SHAPE = {"trails"}
 
 SERVICE_SHAPES = {
@@ -248,7 +247,7 @@ def empty_service_data(service: str) -> Dict[str, Any]:
     if service == "ec2":
         return {"service": "ec2", "security_groups": [], "instances": []}
     if service == "rds":
-        return {"service": "rds", "instances": [], "clusters": []}
+        return {"service": "rds", "instances": []}
     if service == "cloudtrail":
         return {"service": "cloudtrail", "trails": []}
     return {"service": service}
@@ -264,7 +263,7 @@ _LIST_KEYS = {
     "iam": {"users", "roles", "policies"},
     "s3": {"buckets"},
     "ec2": {"security_groups", "instances"},
-    "rds": {"instances", "clusters"},
+    "rds": {"instances"},
     "cloudtrail": {"trails"},
 }
 

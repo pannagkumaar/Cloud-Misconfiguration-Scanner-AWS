@@ -164,3 +164,9 @@ Optionally filtered first by `compliance.filter_findings_by_framework()` when
 - **Non-CIS compliance frameworks** (PCI-DSS, NIST, SOC 2): the
   `compliance/mappings.py` layer is built to support additional frameworks
   the same way CIS was added, just not populated yet.
+- **RDS Aurora clusters**: the RDS collector only calls `describe_db_instances`.
+  An earlier version also collected `describe_db_clusters` data end-to-end
+  (normalized, exposed on `ScanContext`), but no rule ever evaluated it —
+  that's a real coverage gap for cluster-only accounts, not a feature, so
+  the unused collection/normalization code was removed rather than shipped
+  half-wired. Re-add it alongside actual cluster-aware rules if needed.

@@ -384,49 +384,7 @@ def normalize_rds(raw: Dict[str, Any]) -> Dict[str, Any]:
             "tags": {t["Key"]: t["Value"] for t in inst.get("TagList", [])} if inst.get("TagList") else {},
         })
 
-    clusters_raw = raw.get("clusters", raw.get("DBClusters", {}))
-    clusters_list = clusters_raw.get("DBClusters", clusters_raw) if isinstance(clusters_raw, dict) else clusters_raw
-    clusters = []
-    for c in clusters_list or []:
-        if not isinstance(c, dict):
-            continue
-        if "id" in c:
-            clusters.append(c)
-            continue
-        clusters.append({
-            "id": c.get("DBClusterIdentifier", ""),
-            "engine": c.get("Engine"),
-            "engine_version": c.get("EngineVersion"),
-            "status": c.get("Status"),
-            "publicly_accessible": c.get("PubliclyAccessible", False),
-            "encryption": {
-                "storage_encrypted": c.get("StorageEncrypted", False),
-                "kms_key_id": c.get("KmsKeyId"),
-            },
-            "backup": {
-                "backup_retention_period": c.get("BackupRetentionPeriod"),
-                "backup_window": c.get("PreferredBackupWindow"),
-                "copy_tags_to_snapshot": c.get("CopyTagsToSnapshot", False),
-                "deletion_protection": c.get("DeletionProtection", False),
-            },
-            "network": {
-                "vpc_id": c.get("DBSubnetGroup"),
-                "vpc_security_groups": [
-                    {"id": sg.get("VpcSecurityGroupId"), "status": sg.get("Status")}
-                    for sg in c.get("VpcSecurityGroups", [])
-                ],
-            },
-            "members": [
-                {
-                    "db_instance_identifier": m.get("DBInstanceIdentifier"),
-                    "is_cluster_writer": m.get("IsClusterWriter", False),
-                }
-                for m in c.get("DBClusterMembers", [])
-            ],
-            "tags": {t["Key"]: t["Value"] for t in c.get("TagList", [])} if c.get("TagList") else {},
-        })
-
-    return {"service": "rds", "instances": instances, "clusters": clusters}
+    return {"service": "rds", "instances": instances}
 
 
 # --------------------------------------------------------------------------

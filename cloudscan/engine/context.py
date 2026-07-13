@@ -89,10 +89,6 @@ class ScanContext:
         """Get all RDS instances."""
         return self.get_service_data("rds").get("instances", [])
 
-    def get_rds_clusters(self) -> list:
-        """Get all RDS clusters."""
-        return self.get_service_data("rds").get("clusters", [])
-
     def get_cloudtrail_trails(self) -> list:
         """Get all CloudTrail trails."""
         return self.get_service_data("cloudtrail").get("trails", [])

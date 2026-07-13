@@ -220,8 +220,8 @@ def ec2_service():
 
 @pytest.fixture
 def rds_service():
-    def _build(instances=None, clusters=None):
-        return {"service": "rds", "instances": instances or [], "clusters": clusters or []}
+    def _build(instances=None):
+        return {"service": "rds", "instances": instances or []}
     return _build
 
 

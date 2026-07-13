@@ -8,6 +8,10 @@ Gathers:
 - Backup configuration
 - Database security groups
 - Parameter groups
+
+Only standalone DB instances -- Aurora clusters (describe_db_clusters) are
+out of scope since no rule evaluates them yet. Add cluster collection back
+if/when cluster-aware rules are written.
 """
 
 from typing import Any, Dict, List
@@ -37,13 +41,9 @@ class RDSCollector(BaseCollector):
             result = {
                 "service": "rds",
                 "instances": self._collect_instances(rds_client),
-                "clusters": self._collect_clusters(rds_client),
             }
 
-            self.logger.info(
-                f"RDS collection complete: {len(result['instances'])} instances, "
-                f"{len(result['clusters'])} clusters"
-            )
+            self.logger.info(f"RDS collection complete: {len(result['instances'])} instances")
 
             return result
 
@@ -108,65 +108,4 @@ class RDSCollector(BaseCollector):
 
         except Exception as e:
             self.logger.error(f"Error collecting RDS instances: {e}")
-            return []
-
-    def _collect_clusters(self, rds_client) -> List[Dict[str, Any]]:
-        """
-        Collect RDS cluster configurations.
-
-        Returns:
-            List of RDS cluster configurations
-        """
-        clusters = []
-        try:
-            paginator = rds_client.get_paginator("describe_db_clusters")
-
-            for page in paginator.paginate():
-                for cluster in page.get("DBClusters", []):
-                    cluster_data = {
-                        "id": cluster["DBClusterIdentifier"],
-                        "engine": cluster.get("Engine"),
-                        "engine_version": cluster.get("EngineVersion"),
-                        "status": cluster.get("Status"),
-                        "publicly_accessible": cluster.get("PubliclyAccessible", False),
-                        "encryption": {
-                            "storage_encrypted": cluster.get("StorageEncrypted", False),
-                            "kms_key_id": cluster.get("KmsKeyId"),
-                        },
-                        "backup": {
-                            "backup_retention_period": cluster.get("BackupRetentionPeriod"),
-                            "backup_window": cluster.get("PreferredBackupWindow"),
-                            "copy_tags_to_snapshot": cluster.get("CopyTagsToSnapshot", False),
-                            "deletion_protection": cluster.get("DeletionProtection", False),
-                        },
-                        "network": {
-                            "vpc_id": cluster.get("DBSubnetGroup"),
-                            "vpc_security_groups": [
-                                {
-                                    "id": sg["VpcSecurityGroupId"],
-                                    "status": sg["Status"]
-                                }
-                                for sg in cluster.get("VpcSecurityGroups", [])
-                            ],
-                        },
-                        "members": [
-                            {
-                                "db_instance_identifier": member["DBInstanceIdentifier"],
-                                "is_cluster_writer": member.get("IsClusterWriter", False),
-                            }
-                            for member in cluster.get("DBClusterMembers", [])
-                        ],
-                        "tags": {
-                            tag["Key"]: tag["Value"]
-                            for tag in cluster.get("TagList", [])
-                        },
-                    }
-
-                    clusters.append(cluster_data)
-
-            self.logger.debug(f"Collected {len(clusters)} RDS clusters")
-            return clusters
-
-        except Exception as e:
-            self.logger.error(f"Error collecting RDS clusters: {e}")
             return []
