@@ -2,24 +2,24 @@
 
 [![CI](https://github.com/pannagkumaar/Cloud-Misconfiguration-Scanner-AWS/actions/workflows/ci.yml/badge.svg)](https://github.com/pannagkumaar/Cloud-Misconfiguration-Scanner-AWS/actions/workflows/ci.yml)
 
-:: Python / boto3 / Click / SARIF / CIS Benchmark / moto / pytest ::
+Python / boto3 / Click / SARIF / CIS Benchmark / moto / pytest
 
 An agentless AWS Cloud Security Posture Management (CSPM) CLI. CloudScan reads AWS
 resource configuration (live, via read-only IAM, or offline from an exported JSON
 snapshot) and evaluates it against 31 security rules spanning IAM, S3, EC2/VPC, RDS,
-and CloudTrail — each finding comes with evidence, a remediation, and (where
+and CloudTrail. Each finding comes with evidence, a remediation, and (where
 applicable) a CIS AWS Foundations Benchmark control reference.
 
 ## Why this exists
 
 Most "misconfiguration scanner" toy projects hardcode four rules and call it done.
-CloudScan is built the way a real CSPM tool is structured: a normalized data
+CloudScan is built the way a real CSPM tool is structured, with a normalized data
 contract between collection and evaluation, rules that are independently unit
 tested against that contract, moto-backed integration tests that catch real
 boto3 API bugs (not just logic bugs), CI that runs the full suite plus a
 self-seeded demo account, and output formats that integrate with actual
-tooling — SARIF for GitHub Code Scanning, a self-contained HTML report for
-sharing with people who don't want a JSON blob.
+tooling, including SARIF for GitHub Code Scanning and a self-contained HTML
+report for sharing with people who don't want a JSON blob.
 
 ## Quick start
 
@@ -29,7 +29,7 @@ sharing with people who don't want a JSON blob.
 git clone https://github.com/pannagkumaar/Cloud-Misconfiguration-Scanner-AWS.git
 cd Cloud-Misconfiguration-Scanner-AWS
 python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+source .venv/bin/activate   # on Windows use .venv\Scripts\activate
 
 pip install -e .            # installs the `cloudscan` command
 pip install -e ".[dev]"     # + pytest, ruff, moto, pre-commit (for development)
@@ -39,14 +39,14 @@ pip install -e ".[dev]"     # + pytest, ruff, moto, pre-commit (for development)
 
 CloudScan ships a demo that seeds an in-memory mock AWS account (via
 [moto](https://github.com/getmoto/moto), no network calls, no real credentials)
-with a deliberately vulnerable mix of resources, then scans it:
+with a deliberately vulnerable mix of resources, then scans it.
 
 ```bash
 make demo              # console output
-make demo-html         # writes report.html — open it in a browser
+make demo-html         # writes report.html, open it in a browser
 ```
 
-or directly:
+Or run it directly.
 
 ```bash
 python demo/seed_demo_account.py --output html --output-file report.html
@@ -58,7 +58,7 @@ python demo/seed_demo_account.py --output html --output-file report.html
 cloudscan aws-scan --profile myprofile --region us-east-1
 ```
 
-This only calls read (`Describe*`/`Get*`/`List*`) APIs — see
+This only calls read (`Describe*`/`Get*`/`List*`) APIs. See
 [Required IAM policy](#required-iam-policy) below for the exact permission set.
 
 ### Scan an offline export (no AWS access needed)
@@ -79,14 +79,14 @@ one exists) a CIS AWS Foundations Benchmark v1.4/1.5 control reference.
 
 | ID | Severity | Check | CIS |
 |----|----------|-------|-----|
-| IAM-001 | CRITICAL | Policy grants full administrative access (`*:*`) | 1.18 |
+| IAM-001 | CRITICAL | Policy grants full administrative access (wildcard action and resource) | 1.18 |
 | IAM-002 | CRITICAL | Root account has no MFA | 1.5 |
 | IAM-003 | CRITICAL | Root account has an active access key | 1.4 |
 | IAM-004 | HIGH | IAM user has console access without MFA | 1.10 |
 | IAM-005 | MEDIUM | Access key not rotated in 90+ days | 1.14 |
 | IAM-006 | MEDIUM | Credential unused for 90+ days | 1.12 |
 | IAM-007 | MEDIUM | Account password policy is weak or missing | 1.8 |
-| IAM-008 | MEDIUM | Policy grants overly broad permissions | — |
+| IAM-008 | MEDIUM | Policy grants overly broad permissions | n/a |
 | IAM-009 | LOW | Policy attached directly to a user (not a group/role) | 1.15 |
 
 ### S3 (6 rules)
@@ -95,31 +95,31 @@ one exists) a CIS AWS Foundations Benchmark v1.4/1.5 control reference.
 |----|----------|-------|-----|
 | S3-001 | HIGH | Bucket is publicly accessible | 2.1.5.1 |
 | S3-002 | MEDIUM | Default encryption not enabled | 2.1.1 |
-| S3-003 | LOW | Versioning disabled | — |
-| S3-004 | LOW | Access logging disabled | — |
+| S3-003 | LOW | Versioning disabled | n/a |
+| S3-004 | LOW | Access logging disabled | n/a |
 | S3-005 | MEDIUM | Block Public Access not fully enabled | 2.1.5.1 |
-| S3-006 | MEDIUM | Bucket policy does not enforce TLS | — |
+| S3-006 | MEDIUM | Bucket policy does not enforce TLS | n/a |
 
 ### EC2 / VPC (6 rules)
 
 | ID | Severity | Check | CIS |
 |----|----------|-------|-----|
-| SG-001 | HIGH | Security group open to 0.0.0.0/0 on SSH/RDP | — |
-| SG-002 | MEDIUM | Security group open to 0.0.0.0/0 on another port | — |
-| SG-003 | HIGH | Security group open to ::/0 (IPv6) on SSH/RDP | — |
+| SG-001 | HIGH | Security group open to 0.0.0.0/0 on SSH/RDP | n/a |
+| SG-002 | MEDIUM | Security group open to 0.0.0.0/0 on another port | n/a |
+| SG-003 | HIGH | Security group open to the IPv6 equivalent of 0.0.0.0/0 on SSH/RDP | n/a |
 | SG-004 | LOW | Default security group allows traffic | 5.3 |
-| EC2-001 | HIGH | Instance has a public IP behind an open security group | — |
-| EC2-002 | MEDIUM | Instance does not enforce IMDSv2 | — |
+| EC2-001 | HIGH | Instance has a public IP behind an open security group | n/a |
+| EC2-002 | MEDIUM | Instance does not enforce IMDSv2 | n/a |
 
 ### RDS (5 rules)
 
 | ID | Severity | Check | CIS |
 |----|----------|-------|-----|
-| RDS-001 | CRITICAL | Publicly accessible AND unencrypted | — |
-| RDS-004 | MEDIUM | Backup retention period too short | — |
-| RDS-005 | MEDIUM | Deletion protection not enabled | — |
-| RDS-006 | LOW | Not configured for Multi-AZ | — |
-| RDS-007 | LOW | Auto minor version upgrade disabled | — |
+| RDS-001 | CRITICAL | Publicly accessible AND unencrypted | n/a |
+| RDS-004 | MEDIUM | Backup retention period too short | n/a |
+| RDS-005 | MEDIUM | Deletion protection not enabled | n/a |
+| RDS-006 | LOW | Not configured for Multi-AZ | n/a |
+| RDS-007 | LOW | Auto minor version upgrade disabled | n/a |
 
 ### CloudTrail (5 rules)
 
@@ -129,9 +129,9 @@ one exists) a CIS AWS Foundations Benchmark v1.4/1.5 control reference.
 | CT-002 | HIGH | No trail is multi-region | 3.1 |
 | CT-003 | MEDIUM | Log file validation disabled | 3.2 |
 | CT-004 | MEDIUM | Trail not encrypted with KMS | 3.7 |
-| CT-005 | HIGH | Trail exists but is not actively logging | — |
+| CT-005 | HIGH | Trail exists but is not actively logging | n/a |
 
-Filter to just the CIS-mapped subset and get a coverage summary:
+Filter to just the CIS-mapped subset and get a coverage summary.
 
 ```bash
 cloudscan aws-scan --from-file examples/sample-aws-config.json --framework cis
@@ -139,10 +139,10 @@ cloudscan aws-scan --from-file examples/sample-aws-config.json --framework cis
 
 ## Risk scoring
 
-Every finding gets a 0–100 score (`--output json`/`jsonl` includes it, console
+Every finding gets a 0-100 score (`--output json`/`jsonl` includes it, console
 and HTML use it to order results). The score exists to prioritize *within* a
-severity tier — two HIGH findings aren't equally urgent — not to replace
-severity: a base score per tier is boosted for rules that specifically
+severity tier, since two HIGH findings aren't equally urgent, not to replace
+severity. A base score per tier is boosted for rules that specifically
 indicate internet/public exposure (e.g. a public S3 bucket or a security group
 open to the world), capped so a boosted lower tier can never outrank an
 unboosted higher tier. See `cloudscan/engine/scoring.py`.
@@ -159,8 +159,8 @@ cloudscan aws-scan --from-file examples/sample-aws-config.json --output html --o
 
 The CI workflow (`.github/workflows/ci.yml`) runs the demo account through
 `--output sarif` and uploads it via `github/codeql-action/upload-sarif`, so
-findings from the seeded demo account show up in this repo's Security tab —
-a working example of wiring CSPM output into GitHub's native tooling.
+findings from the seeded demo account show up in this repo's Security tab.
+It's a working example of wiring CSPM output into GitHub's native tooling.
 
 ## CLI reference
 
@@ -221,13 +221,13 @@ Options:
   --help                            Show this message and exit.
 ```
 
-There's also `cloudscan website-scan <url>` — a lightweight, unauthenticated
+There's also `cloudscan website-scan <url>`, a lightweight, unauthenticated
 recon module that checks a public website's headers/TLS/error pages for
 signs of AWS infrastructure. It's a secondary, opportunistic module (useful
 as a first step when you don't have AWS credentials yet); the actual security
 analysis is `aws-scan`. See [WEBSITE_SCANNER.md](WEBSITE_SCANNER.md).
 
-## Offline mode: exporting a config to scan
+## Offline mode, exporting a config to scan
 
 Offline mode reads either a raw AWS API export (e.g. from
 `aws iam list-users`-style calls, envelope-wrapped) or a pre-normalized
@@ -239,7 +239,7 @@ into the normalized shape rules actually evaluate against.
 To produce a real export from an account you have (or temporarily had)
 credentials for, `scripts/export_aws_config.sh` / `.ps1` call the AWS CLI
 across iam/s3/ec2/rds/cloudtrail and write a raw export in the shape
-`normalize.py` expects:
+`normalize.py` expects.
 
 ```bash
 ./scripts/export_aws_config.sh aws-config.json us-east-1 myprofile
@@ -248,8 +248,9 @@ cloudscan aws-scan --from-file aws-config.json
 
 ## Required IAM policy
 
-Read-only. No `iam:GenerateCredentialReport` write concerns — it's an
-async report-generation call but doesn't modify account state.
+Read-only. `iam:GenerateCredentialReport` has no write concerns despite
+the name. It's an async report-generation call that doesn't modify
+account state.
 
 ```json
 {
@@ -298,11 +299,11 @@ make test             # pytest with coverage (261 tests)
 make lint             # ruff check
 ```
 
-Tests are organized by layer: unit tests for each rule (`tests/test_rules_*.py`)
-against hand-built fixtures, collector tests against `moto`-mocked AWS
-(`tests/test_collectors_*.py`), formatter tests that validate real output
+Tests are organized by layer. Unit tests for each rule (`tests/test_rules_*.py`)
+run against hand-built fixtures, collector tests run against `moto`-mocked AWS
+(`tests/test_collectors_*.py`), formatter tests validate real output
 (SARIF against the official OASIS JSON schema, HTML for balanced tags), and
-an end-to-end integration test (`tests/test_integration_moto.py`) that seeds
+an end-to-end integration test (`tests/test_integration_moto.py`) seeds
 a mock account and asserts on the findings that come out the other end.
 
 ## Project layout
@@ -310,7 +311,7 @@ a mock account and asserts on the findings that come out the other end.
 ```
 cloudscan/
 ├── cmd/cloudscan.py         # Click CLI entry point
-├── collectors/               # boto3 collectors: iam, s3, ec2, rds, cloudtrail
+├── collectors/               # boto3 collectors for iam, s3, ec2, rds, cloudtrail
 ├── loaders/                  # file_loader (offline JSON) + normalize (schema adapter)
 ├── engine/                   # ScanContext, RuleEngine, Finding, scoring
 ├── rules/                    # 31 rule classes, one file each
